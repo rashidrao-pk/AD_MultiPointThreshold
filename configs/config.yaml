@@ -1,2 +1,85 @@
+# ============================================================================
+# Project Configuration: Multi-Point Threshold for Anomaly Detection
+# ============================================================================
+
+# ============================================================================
+# Dataset Configuration
+# ============================================================================
+datasets:
+  # Supported datasets: MVtec, Robotics_Hazards, Distrimuse_UniGra
+  available:
+    - name: "MVtec"
+      description: "MVTec Anomaly Detection Dataset"
+      path: "${DATA_DIR}/MVtec"
+      default_object: "hazelnut"
+      safety_areas: null  # MVtec doesn't use safety areas
+    
+    - name: "Robotics_Hazards"
+      description: "Robotics Hazards Dataset"
+      path: "${DATA_DIR}/Robotics_Hazards"
+      safety_areas: ["PLeft", "PRight", "RoboArm", "ConvBelt"]
+    
+    - name: "Distrimuse_UniGra"
+      description: "DistriMuSe Synthetic Palletizing Dataset (University of Granada)"
+      path: "${DATA_DIR}/Distrimuse_UniGra"
+      safety_areas: ["PLeft", "PRight", "RoboArm", "ConvBelt"]
+  
+  # Default dataset to use if none is specified
+  default: "Distrimuse_UniGra"
+
+# ============================================================================
+# Data paths - Update these with your actual dataset locations
+# ============================================================================
 data:
-  path: 
+  # Base directory containing all datasets
+  # You can set this via environment variable: export DATA_DIR=/path/to/datasets
+  base_dir: "${DATA_DIR:-.}"
+  
+  # Individual dataset paths (override base_dir if needed)
+  paths:
+    MVtec: null  # Will be resolved from base_dir/MVtec if not set
+    Robotics_Hazards: null  # Will be resolved from base_dir/Robotics_Hazards if not set
+    Distrimuse_UniGra: null  # Will be resolved from base_dir/Distrimuse_UniGra if not set
+
+# ============================================================================
+# Training Configuration
+# ============================================================================
+training:
+  default_epochs: 200
+  default_batch_size: 16
+  default_latent_dims: 64
+  default_augmentation: "custom"  # Options: "min", "custom"
+  learning_rates:
+    encoder_decoder: 0.001
+    discriminator: 0.0001
+  beta:
+    kl: 0.0001
+    gan: 0.0001
+  losses:
+    reconstruction: "MSE"  # Options: "MSE", "Perceptual"
+    adversarial: "BCWithLogits"
+
+# ============================================================================
+# Model Configuration
+# ============================================================================
+model:
+  depth: 3
+  target_size: 128
+  input_channels: 3
+  checkpoints_dir: "models"
+
+# ============================================================================
+# Inference Configuration
+# ============================================================================
+inference:
+  batch_size: 32
+  confidence_threshold: 0.5
+  
+# ============================================================================
+# Output paths
+# ============================================================================
+output:
+  results_dir: "results"
+  models_dir: "models"
+  training_curves_dir: "results/training"
+  monitoring_dir: "results/monitor" 
