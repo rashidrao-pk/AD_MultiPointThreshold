@@ -16,11 +16,7 @@ BASE REPO
 > https://github.com/rashidrao-pk/advis_distrimuse_unito
 
 
-1. Dataset Source:
-    > https://zenodo.org/records/18742241?token=eyJhbGciOiJIUzUxMiJ9.eyJpZCI6IjczM2FjZDQ5LTY4ODAtNGE2YS05MzQzLTNmMTU5NzY2YzE5MCIsImRhdGEiOnt9LCJyYW5kb20iOiJjNjJmZGY4Y2E0ZWI5MzMwMDI5MzE0NzdlZTcwNTZhMyJ9.9w6dITIp2q681wEH31ZCUg5y5hi3rRy60cHxaLixOm1-5xTIkNjldKMaDvmB8hQRYrHoJ7A_nWNm7fWcTe4KPQ
-
-
-4. 
+Dataset source files and public model checkpoints are listed in the collapsible download section below.
 
 ## 1. Start With Environment
 
@@ -37,36 +33,225 @@ pip install -r requirements.txt
 ```
 
 
-## Step 2: Retrive Datasets
-These datasets are used and needs to be downloaded
-1. DistriMuSe_UniGra dataset
-2. Robotics Hazards
-3. MVTec Dataset
 
+---
 
-| Dataset | Description | LINK |
-|---|---| ---- |
-| Synthetic Palletizing | Valeria-Lab, University of Granada | [**Zenodo/Kinematics** dataset](https://zenodo.org/records/18742241?token=eyJhbGciOiJIUzUxMiJ9.eyJpZCI6IjczM2FjZDQ5LTY4ODAtNGE2YS05MzQzLTNmMTU5NzY2YzE5MCIsImRhdGEiOnt9LCJyYW5kb20iOiJjNjJmZGY4Y2E0ZWI5MzMwMDI5MzE0NzdlZTcwNTZhMyJ9.9w6dITIp2q681wEH31ZCUg5y5hi3rRy60cHxaLixOm1-5xTIkNjldKMaDvmB8hQRYrHoJ7A_nWNm7fWcTe4KPQ)
+## 2. Download Datasets and Model Checkpoints
 
- > Tool used to generate Synthetic Dataset by Valeria-LAB is available at https://github.com/valerialabugr/SimIndus-Dataset.
+The project uses external datasets and pretrained checkpoints. They are not stored directly in this repository because of file size limitations.
 
-## Step 2: Retrive Model Weight
+<details>
+<summary><strong>2.1 Install download tools</strong></summary>
 
-> [!NOTE]
-> Model checkpoints are not included in the repository because of file size limitations.
-
-a. Retreive Models from GitLab
-> https://gitlab.di.unito.it/rashid/dm_checkpoints_demo32
-
+Install the Kaggle and Hugging Face CLIs:
 
 ```bash
-cd AD_MultiPointThreshold/models/DistriMuSe_synthetic
-git clone https://gitlab.di.unito.it/rashid/dm_checkpoints_demo32 origin-url   # FOR Simulated ROBOT Palletizing - DEMO 3.2
-cd ..
+pip install -U kaggle huggingface_hub
+# or using conda 
+# conda install -c conda-forge huggingface_hub
+```
+#### verify
+```bash
+hf --help
+```
+
+For Kaggle downloads, make sure your Kaggle API token is configured. Download `kaggle.json` from your Kaggle account settings and place it in:
+
+```bash
+mkdir -p ~/.kaggle
+cp kaggle.json ~/.kaggle/kaggle.json
+chmod 600 ~/.kaggle/kaggle.json
+```
+
+</details>
+
+<details>
+<summary><strong>2.2 Download datasets from Kaggle</strong></summary>
+
+Supported public Kaggle datasets:
+
+| Dataset | Kaggle URL | Suggested Local Folder |
+|---|---|---|
+| Robotics Hazards | https://www.kaggle.com/datasets/rashidrao/robotics-hazards | `data/Robotics_Hazards` |
+| Cobots Synthetic / DistriMuSe UniGra | https://www.kaggle.com/datasets/rashidrao/cobots-synthetic/ | `data/Distrimuse_UniGra` |
+
+Download and unzip:
+
+```bash
+mkdir -p data
+
+kaggle datasets download -d rashidrao/robotics-hazards \
+  -p data/Robotics_Hazards \
+  --unzip
+
+kaggle datasets download -d rashidrao/cobots-synthetic \
+  -p data/Distrimuse_UniGra \
+  --unzip
 ```
 
 
-## Run Scripts
+Recommended folder structure:
+
+```text
+data/
+├── Robotics_Hazards/
+├── Cobots_Synthetic/
+└── MVtec/
+```
+
+Set the dataset root path:
+
+```bash
+export DATA_DIR=$(pwd)/data
+```
+
+</details>
+
+<details>
+<summary><strong>2.3 Download pretrained checkpoints from Hugging Face</strong></summary>
+
+Pretrained model checkpoints are available here:
+
+| Checkpoint Repository | Dataset / Use Case |
+|---|---|
+| https://huggingface.co/rashidrao/AD_Cobots_Synthetic | Cobots Synthetic / DistriMuSe UniGra |
+| https://huggingface.co/rashidrao/AD_Robotics_Hazards | Robotics Hazards |
+| https://huggingface.co/rashidrao/AD_MVTec | MVTec AD |
+
+Download all checkpoint repositories:
+
+```bash
+mkdir -p checkpoints
+
+huggingface-cli download rashidrao/AD_Cobots_Synthetic \
+  --local-dir checkpoints/AD_Cobots_Synthetic
+
+huggingface-cli download rashidrao/AD_Robotics_Hazards \
+  --local-dir checkpoints/AD_Robotics_Hazards
+
+huggingface-cli download rashidrao/AD_MVTec \
+  --local-dir checkpoints/AD_MVTec
+```
+
+or 
+
+
+```bash
+pip install -U huggingface_hub
+```
+
+### Download Cobots Synthetic Checkpoints
+
+```python
+from huggingface_hub import snapshot_download
+
+snapshot_download(
+    repo_id="rashidrao/AD_Cobots_Synthetic",
+    local_dir="checkpoints/AD_Cobots_Synthetic"
+)
+```
+
+### Download Robotics Hazards Checkpoints
+
+```python
+from huggingface_hub import snapshot_download
+
+snapshot_download(
+    repo_id="rashidrao/AD_Robotics_Hazards",
+    local_dir="checkpoints/AD_Robotics_Hazards"
+)
+```
+
+### Download MVTec Checkpoints
+
+```python
+from huggingface_hub import snapshot_download
+
+snapshot_download(
+    repo_id="rashidrao/AD_MVTec",
+    local_dir="checkpoints/AD_MVTec"
+)
+```
+
+Expected checkpoint structure:
+
+```text
+checkpoints/
+├── AD_Cobots_Synthetic/
+│   ├── model_PLeft_64.pt
+│   ├── model_PRight_64.pt
+│   ├── model_RoboArm_64.pt
+│   └── model_ConvBelt_64.pt
+├── AD_Robotics_Hazards/
+└── AD_MVTec/
+```
+
+</details>
+
+<details>
+<summary><strong>2.4 Verify downloaded checkpoints</strong></summary>
+
+List available models:
+
+```bash
+python scripts/model_loader.py --list
+```
+
+Inspect a checkpoint and test a forward pass:
+
+```bash
+python scripts/model_loader.py \
+  --model_path checkpoints/AD_Cobots_Synthetic/model_RoboArm_64.pt \
+  --show_summary \
+  --test_forward \
+  --device auto
+```
+
+</details>
+
+<details>
+<summary><strong>2.5 Quick inference with pretrained checkpoints</strong></summary>
+
+Example with the Cobots Synthetic / DistriMuSe UniGra RoboArm model:
+
+```bash
+python scripts/inference.py \
+  --dataset Distrimuse_UniGra \
+  --safety_area RoboArm \
+  --checkpoints checkpoints/AD_Cobots_Synthetic \
+  --static_mask_paths masks/PLeft.png masks/PRight.png masks/RoboArm.png masks/ConvBelt.png \
+  --threshold_dir results/thresholds
+```
+
+Example with all safety areas:
+
+```bash
+python scripts/inference.py \
+  --dataset Distrimuse_UniGra \
+  --safety_area ALL \
+  --checkpoints checkpoints/AD_Cobots_Synthetic \
+  --static_mask_paths masks/PLeft.png masks/PRight.png masks/RoboArm.png masks/ConvBelt.png \
+  --threshold_dir results/thresholds
+```
+
+</details>
+
+<details>
+<summary><strong>2.6 Notes on thresholds</strong></summary>
+
+Thresholds are dataset-specific and camera/setup-specific. If you change the dataset, camera view, preprocessing, or safety-area masks, recalibrate thresholds before reporting final results.
+
+```bash
+python scripts/calibrate_threshold.py \
+  --safety_area RoboArm \
+  --checkpoints checkpoints/AD_Cobots_Synthetic \
+  --threshold_strategy percentile \
+  --threshold_percentile 99.0
+```
+
+</details>
+
+## 3. Run Scripts
 
 <details>
 <summary><strong>Optional: Train models Again?
