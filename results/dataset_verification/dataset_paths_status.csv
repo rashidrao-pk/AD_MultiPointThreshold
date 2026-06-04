@@ -1,0 +1,4 @@
+dataset,description,path,exists,is_symlink,safety_areas
+MVtec,MVTec Anomaly Detection Dataset,D:\DS\AD\mvtec_preprocessed,True,False,
+Robotics_Hazards,Robotics Hazards Dataset,D:\DS\AD\hazards_robot\corridors\processed_corridor,True,False,
+Cobots_Synthetic,DistriMuSe Synthetic Palletizing Dataset (University of Granada),D:\DS\AD\Cobots_Synthetic,True,False,"['PLeft', 'PRight', 'RoboArm', 'ConvBelt']"

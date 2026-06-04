@@ -73,7 +73,7 @@ Supported public Kaggle datasets:
 | Dataset | Kaggle URL | Suggested Local Folder |
 |---|---|---|
 | Robotics Hazards | https://www.kaggle.com/datasets/rashidrao/robotics-hazards | `data/Robotics_Hazards` |
-| Cobots Synthetic / DistriMuSe UniGra | https://www.kaggle.com/datasets/rashidrao/cobots-synthetic/ | `data/Distrimuse_UniGra` |
+| Cobots Synthetic / DistriMuSe UniGra | https://www.kaggle.com/datasets/rashidrao/cobots-synthetic/ | `data/Cobots_Synthetic` |
 
 Download and unzip:
 
@@ -85,7 +85,7 @@ kaggle datasets download -d rashidrao/robotics-hazards \
   --unzip
 
 kaggle datasets download -d rashidrao/cobots-synthetic \
-  -p data/Distrimuse_UniGra \
+  -p data/Cobots_Synthetic \
   --unzip
 ```
 
@@ -216,7 +216,7 @@ Example with the Cobots Synthetic / DistriMuSe UniGra RoboArm model:
 
 ```bash
 python scripts/inference.py \
-  --dataset Distrimuse_UniGra \
+  --dataset Cobots_Synthetic \
   --safety_area RoboArm \
   --checkpoints checkpoints/AD_Cobots_Synthetic \
   --static_mask_paths masks/PLeft.png masks/PRight.png masks/RoboArm.png masks/ConvBelt.png \
@@ -227,7 +227,7 @@ Example with all safety areas:
 
 ```bash
 python scripts/inference.py \
-  --dataset Distrimuse_UniGra \
+  --dataset Cobots_Synthetic \
   --safety_area ALL \
   --checkpoints checkpoints/AD_Cobots_Synthetic \
   --static_mask_paths masks/PLeft.png masks/PRight.png masks/RoboArm.png masks/ConvBelt.png \
@@ -281,7 +281,7 @@ Run anomaly detection from multiple `input sources` including following input so
 # Pre-cropped frames, evaluate against annotations
 python scripts/inference.py --dataset MVtec --object hazelnut
 python scripts/inference.py --dataset Robotics_Hazards
-python scripts/inference.py --dataset DistriMuSe_UniGra
+python scripts/inference.py --dataset Cobots_Synthetic
 ```
 
 ---
@@ -296,7 +296,7 @@ data:
   paths:
     MVtec: null                  # Will use base_dir/MVtec
     Robotics_Hazards: null       # Will use base_dir/Robotics_Hazards
-    Distrimuse_UniGra: null      # Will use base_dir/Distrimuse_UniGra
+    Cobots_Synthetic: null      # Will use base_dir/Cobots_Synthetic
 ```
 
 Or set via environment variable:
@@ -331,7 +331,7 @@ python scripts/train.py --safety_area ALL
 ```bash
 # Custom training parameters
 python scripts/train.py \
-  --dataset Distrimuse_UniGra \
+  --dataset Cobots_Synthetic \
   --safety_area RoboArm \
   --epochs 300 \
   --batch_size 32 \
@@ -370,7 +370,7 @@ python scripts/train.py --dataset MVtec --safety_area RoboArm --epochs 200
 python scripts/train.py --dataset Robotics_Hazards --safety_area ConvBelt
 
 # DistriMuSe synthetic (default)
-python scripts/train.py --dataset Distrimuse_UniGra --safety_area ALL
+python scripts/train.py --dataset Cobots_Synthetic --safety_area ALL
 ```
 
 ---
@@ -464,14 +464,14 @@ python scripts/inference.py \
 
 # DistriMuSe synthetic
 python scripts/inference.py \
-  --dataset Distrimuse_UniGra \
+  --dataset Cobots_Synthetic \
   --safety_area RoboArm \
   --checkpoints models/ \
   --threshold_dir results/thresholds/
 ```
 
 ### Inference Parameters
-- `--dataset` - Dataset selection: MVtec, Robotics_Hazards, Distrimuse_UniGra
+- `--dataset` - Dataset selection: MVtec, Robotics_Hazards, Cobots_Synthetic
 - `--safety_area` - Safety area to evaluate: PLeft, PRight, RoboArm, ConvBelt, or ALL
 - `--latent_dims` - Must match training latent dimensions
 - `--quantile` - Anomaly score quantile threshold
@@ -513,7 +513,7 @@ results/
 export DATA_DIR=/correct/path/to/datasets
 ls $DATA_DIR/MVtec
 ls $DATA_DIR/Robotics_Hazards
-ls $DATA_DIR/Distrimuse_UniGra
+ls $DATA_DIR/Cobots_Synthetic
 ```
 
 ### Model Loading Issues
@@ -558,7 +558,7 @@ python scripts/train.py --latent_dims 32 --safety_area RoboArm
 ## 12. Version History
 
 - **v1.0** (Current): Multi-dataset support, model inspection utilities
-- Dataset switching: MVtec, Robotics_Hazards, Distrimuse_UniGra
+- Dataset switching: MVtec, Robotics_Hazards, Cobots_Synthetic
 - Enhanced configuration management
 - Model loader and inspection tools
 - Comprehensive documentation

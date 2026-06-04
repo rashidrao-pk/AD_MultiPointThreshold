@@ -10,22 +10,27 @@ datasets:
   available:
     - name: "MVtec"
       description: "MVTec Anomaly Detection Dataset"
-      path: "${DATA_DIR}/MVtec"
+      # path: "${DATA_DIR}/MVtec"
+      path: "D://DS//AD//mvtec_preprocessed"
       default_object: "hazelnut"
       safety_areas: null  # MVtec doesn't use safety areas
     
     - name: "Robotics_Hazards"
       description: "Robotics Hazards Dataset"
-      path: "${DATA_DIR}/Robotics_Hazards"
-      safety_areas: ["PLeft", "PRight", "RoboArm", "ConvBelt"]
+      # path: "${DATA_DIR}/Robotics_Hazards"
+      path: "D://DS//AD//hazards_robot//corridors//processed_corridor"
+      # safety_areas: ["PLeft", "PRight", "RoboArm", "ConvBelt"]
     
-    - name: "Distrimuse_UniGra"
+    - name: "Cobots_Synthetic"
       description: "DistriMuSe Synthetic Palletizing Dataset (University of Granada)"
-      path: "${DATA_DIR}/Distrimuse_UniGra"
+      # path: "${DATA_DIR}/Cobots_Synthetic"
+      path: "D://DS//AD//Cobots_Synthetic"
+      path_train: "D://DS//AD//Cobots_Synthetic//train"
+      path_test: "D://DS//AD//Cobots_Synthetic//test"
       safety_areas: ["PLeft", "PRight", "RoboArm", "ConvBelt"]
   
   # Default dataset to use if none is specified
-  default: "Distrimuse_UniGra"
+  default: "Cobots_Synthetic"
 
 # ============================================================================
 # Data paths - Update these with your actual dataset locations
@@ -39,7 +44,7 @@ data:
   paths:
     MVtec: null  # Will be resolved from base_dir/MVtec if not set
     Robotics_Hazards: null  # Will be resolved from base_dir/Robotics_Hazards if not set
-    Distrimuse_UniGra: null  # Will be resolved from base_dir/Distrimuse_UniGra if not set
+    Cobots_Synthetic: null  # Will be resolved from base_dir/Cobots_Synthetic if not set
 
 # ============================================================================
 # Training Configuration

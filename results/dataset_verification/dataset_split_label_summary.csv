@@ -1,0 +1,10 @@
+dataset,split,label,num_images
+Cobots_Synthetic,test,anomaly,233
+Cobots_Synthetic,test,normal,23223
+Cobots_Synthetic,train,normal,24032
+MVtec,test,anomaly,1258
+MVtec,test,normal,467
+MVtec,train,normal,3591
+MVtec,unknown,unknown,1258
+Robotics_Hazards,test,anomaly,84576
+Robotics_Hazards,train,normal,45270
