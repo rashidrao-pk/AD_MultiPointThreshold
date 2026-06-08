@@ -17,8 +17,8 @@ from typing import Any, Dict, Optional
 
 import torch
 
-import utils_model as utmc
-from utils_model import Encoder, Decoder, Discriminator
+import utils.scripts.utils_model as utmc
+from utils.scripts.utils_model import Encoder, Decoder, Discriminator
 
 
 ENCODER_KEYS = ("encoder_state_dict", "encoder", "Enc", "enc")

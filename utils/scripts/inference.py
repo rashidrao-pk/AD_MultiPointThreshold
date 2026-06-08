@@ -20,8 +20,8 @@ from cv_bridge import CvBridge
 from distrimuse_ros2_api.msg import RulexAreaScore, RulexDetectionResult
 
 import utils as ut
-import utils_model as utmc
-from utils_model import Encoder, Decoder, Discriminator
+import utils.scripts.utils_model as utmc
+from utils.scripts.utils_model import Encoder, Decoder, Discriminator
 
 
 ALL_SAFETY_AREAS = ["PLeft", "PRight", "RoboArm", "ConvBelt"]

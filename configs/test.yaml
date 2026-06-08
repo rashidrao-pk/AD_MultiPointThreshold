@@ -1,0 +1,26 @@
+device: cpu
+
+data:
+  name: MVTec
+  dataset_root: "/home/hakimmics/data/mvtec_anomaly_detection"
+  category: screw
+  img_size: 128
+  batch_size: 16
+  num_workers: 2
+  pin_memory: true
+
+
+model:
+  name: vaegan
+  checkpoint_root: "models/vaegan"
+  latent_dim: 64
+  pretrained: true
+
+scoring:
+  method: reconstruction_mse
+
+
+
+threshold:
+  method: single_point
+  percentile: 95
