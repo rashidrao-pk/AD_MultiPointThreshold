@@ -68,6 +68,7 @@ def main(config_path, suffix):
         metrics = ranking_metrics(test_scores.detach().cpu(), test_labels)
     except:
         print("[+] Ranking metrics computation using prediction classification.")
+        print(prediction.shape, test_labels.shape)
         metrics = ranking_metrics(prediction, test_labels)
     result.update(metrics)
     print(f"[+] Ranking metrics: {result}")

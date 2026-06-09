@@ -41,7 +41,7 @@ def _reconstruction_score(loader, enc, dec, device, metric="mse"):
 
             scores.append(batch_scores.detach().cpu())
             labels.append(batch_labels.detach().cpu())
-
+            
     return torch.cat(scores), torch.cat(labels)
 
 
@@ -72,5 +72,6 @@ def reconstruction_quantile_score(loader, enc, dec, device, quantiles):
 
             scores.append(batch_scores.detach().cpu())
             labels.append(batch_labels.detach().cpu())
+        
 
     return torch.cat(scores), torch.cat(labels)

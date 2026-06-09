@@ -5,7 +5,7 @@ data:
   dataset_root: "/gpfs/workdir/zianiab/data/raw/processed_corridor"
   category: corridor
   img_size: 128
-  batch_size: 1024
+  batch_size: 512
   num_workers: 2
   pin_memory: true
 
