@@ -1,0 +1,38 @@
+device: cuda
+
+data:
+  name: Robotics_Hazards
+  dataset_root: "/gpfs/workdir/zianiab/data/raw/processed_corridor"
+  category: corridor
+  img_size: 128
+  batch_size: 1024
+  num_workers: 2
+  pin_memory: true
+
+
+model:
+  name: vaegan
+  checkpoint_root: "/gpfs/workdir/zianiab/models/vaegan"
+  latent_dim: 64
+  pretrained: true
+
+scoring:
+  method: reconstruction_l1
+  quantiles: [0.5, 0.75, 0.9, 0.95, 0.99]
+
+
+
+threshold:
+  method: single_point
+  percentile: 95 # 
+  decision_rule: any 
+
+output:
+  dir: results/exp
+
+
+
+# decision rules for multi-point thresholding:
+# - any: if any of the scores exceed the threshold, classify as anomaly
+# - all: if all scores exceed the threshold, classify as anomaly
+# - majority: if more than half of the scores exceed the threshold, classify as anomaly
