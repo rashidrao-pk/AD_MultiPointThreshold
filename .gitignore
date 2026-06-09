@@ -1,6 +1,5 @@
 scripts/results/
 /checkpoints/*
-/data/*
 models/vaegan/AD_MVTec/*
 models/vaegan/AD_Cobots_Synthetic/*
 models/vaegan/AD_Robotics_Hazards/*
