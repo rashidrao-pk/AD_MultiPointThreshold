@@ -46,11 +46,17 @@ def make_run_dir(config, suffix=""):
     category = getattr(config.data, "category", "all")
     scoring_method = config.scoring.method
     threshold_method = config.threshold.method
+    
+    run_name = f"{dataset_name}_{category}_{scoring_method}_{threshold_method}"
 
-    run_name = f"{dataset_name}_{category}_{scoring_method}_{threshold_method}_{timestamp}"
+    if config.threshold.decision_rule is not None:
+        threshold_method += f"_{config.threshold.decision_rule}"
+        run_name += threshold_method
 
     if suffix:
         run_name += f"_{suffix}"
+
+    run_name += f"_{timestamp}"
 
     output_dir = Path(config.output.dir)
     run_dir = output_dir / run_name

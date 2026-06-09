@@ -1,4 +1,5 @@
 import torch
+from tqdm import tqdm
 
 
 def reconstruction_mse_score(loader, enc, dec, device):
@@ -20,29 +21,24 @@ def _reconstruction_score(loader, enc, dec, device, metric="mse"):
     scores = []
     labels = []
 
-    with torch.no_grad():
-        for images, batch_labels in loader:
-            images = images.to(device)
+    with torch.inference_mode():
+        for images, batch_labels in tqdm(loader, desc=f"Scoring ({metric})"):
+            images = images.to(device, non_blocking=True)
 
-            mu, logvar = enc(images)
+            mu, _ = enc(images)
             recon = dec(mu)
 
             diff = images - recon
 
             if metric == "mse":
                 batch_scores = (diff ** 2).mean(dim=(1, 2, 3))
-
             elif metric == "l1":
                 batch_scores = diff.abs().mean(dim=(1, 2, 3))
-
             elif metric == "l2":
                 batch_scores = torch.sqrt((diff ** 2).sum(dim=(1, 2, 3)))
-
             else:
                 raise ValueError(f"Unknown reconstruction metric: {metric}")
 
-            # CPU for thresholding and evalution later on...
-            # to change  if necessary... 
             scores.append(batch_scores.detach().cpu())
             labels.append(batch_labels.detach().cpu())
 
@@ -58,15 +54,14 @@ def reconstruction_quantile_score(loader, enc, dec, device, quantiles):
 
     q = torch.tensor(quantiles, device=device)
 
-    with torch.no_grad():
-        for images, batch_labels in loader:
-            images = images.to(device)
+    with torch.inference_mode():
+        for images, batch_labels in tqdm(loader, desc="Scoring (quantiles)"):
+            images = images.to(device, non_blocking=True)
 
-            mu, logvar = enc(images)
+            mu, _ = enc(images)
             recon = dec(mu)
 
             anomaly_map = (images - recon).abs()
-
             flat_map = anomaly_map.view(anomaly_map.size(0), -1)
 
             batch_scores = torch.quantile(
