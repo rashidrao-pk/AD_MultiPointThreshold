@@ -1,6 +1,10 @@
 import argparse
-from utils import read_config
+from utils import read_config, make_run_dir, save_config_yaml
 import torch
+import time
+import json
+from pathlib import Path
+import yaml
 
 from data import load_data
 from models.vaegan import load_model
@@ -11,7 +15,7 @@ from modules.evaluation import ranking_metrics, threshold_metrics, prepare_binar
 
 
 
-def main(config_path):
+def main(config_path, suffix):
     config = read_config(config_path)
 
     # Set up device for GPU training
@@ -61,6 +65,7 @@ def main(config_path):
 
     # Evaluation 
     result = {}
+    raw_test_labels = test_labels # to save later
     test_labels = prepare_binary_labels(test_labels, getattr(test_dataset, "class_to_idx", None))
     try:
         metrics = ranking_metrics(test_scores.detach().cpu(), test_labels)
@@ -74,12 +79,38 @@ def main(config_path):
     result.update(threshold_metrics_result)
     print(f"[+] Threshold metrics: {threshold_metrics_result}")
 
+    # saving results 
+
+    run_dir = make_run_dir(config, suffix)
+
+    # save config
+    save_config_yaml(config, run_dir / "config.yaml")
+
+    # save metrics
+    with open(run_dir / "results.json", "w") as f:
+        json.dump(result, f, indent=4)
+
+
+
+    # save tensors
+    torch.save(
+        {
+            "train_scores": train_scores.detach().cpu(),
+            "test_scores": test_scores.detach().cpu(),
+            "raw_test_labels": raw_test_labels.detach().cpu(),
+            "binary_test_labels": test_labels,
+            "prediction": prediction.detach().cpu(),
+        },
+        run_dir / "outputs.pt",
+)
+
+    print(f"[+] Experiment completed. Results saved to: {run_dir}")
 
     
-
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--config", required=True)
+    parser.add_argument("--suffix", default="")
     args = parser.parse_args()
 
-    main(args.config)
+    main(args.config, args.suffix)
