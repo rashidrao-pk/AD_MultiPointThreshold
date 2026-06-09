@@ -7,6 +7,10 @@ from models.vaegan import load_model
 from modules.scoring import score_samples
 from modules.thresholding import fit_threshold
 from modules.evaluation import ranking_metrics, threshold_metrics, prepare_binary_labels
+
+
+
+
 def main(config_path):
     config = read_config(config_path)
 
@@ -24,8 +28,7 @@ def main(config_path):
     # loading the model
 
     enc, dec, disc = load_model(
-        config.model,
-        config.data,
+        config,
         device
     )
     print(f"[+] Model loaded successfully")
@@ -34,6 +37,7 @@ def main(config_path):
     # We do not compute reconstructions here, we go directly to scoring
     # as some scoring methods (like latent space distance) do not require reconstructions at all.
 
+    print(f"[+] Scoring using method: {config.scoring.method}")
 
     train_scores, train_labels = score_samples(train_loader, enc, dec, disc, config)
     test_scores, test_labels = score_samples(test_loader, enc, dec, disc, config)

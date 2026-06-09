@@ -3,7 +3,7 @@ device: cpu
 data:
   name: MVTec
   dataset_root: "/home/hakimmics/data/mvtec_anomaly_detection"
-  category: screw
+  category: zipper
   img_size: 128
   batch_size: 16
   num_workers: 2
@@ -17,7 +17,7 @@ model:
   pretrained: true
 
 scoring:
-  method: reconstruction_mse
+  method: reconstruction_l2
 
 
 

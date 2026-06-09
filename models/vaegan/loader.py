@@ -22,7 +22,9 @@ def get_checkpoint_path(model_cfg, data_cfg):
     return Path(model_cfg.checkpoint_root) / dataset_folder / "checkpoints" / ckpt_name
 
 
-def load_model(model_cfg, data_cfg, device):
+def load_model(config, device):
+    model_cfg = config.model
+    data_cfg = config.data
     ckpt_path = get_checkpoint_path(model_cfg, data_cfg)
 
     if not ckpt_path.exists():
