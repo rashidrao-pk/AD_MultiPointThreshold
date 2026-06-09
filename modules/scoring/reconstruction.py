@@ -47,3 +47,35 @@ def _reconstruction_score(loader, enc, dec, device, metric="mse"):
             labels.append(batch_labels.detach().cpu())
 
     return torch.cat(scores), torch.cat(labels)
+
+
+def reconstruction_quantile_score(loader, enc, dec, device, quantiles):
+    enc.eval()
+    dec.eval()
+
+    scores = []
+    labels = []
+
+    q = torch.tensor(quantiles, device=device)
+
+    with torch.no_grad():
+        for images, batch_labels in loader:
+            images = images.to(device)
+
+            mu, logvar = enc(images)
+            recon = dec(mu)
+
+            anomaly_map = (images - recon).abs()
+
+            flat_map = anomaly_map.view(anomaly_map.size(0), -1)
+
+            batch_scores = torch.quantile(
+                flat_map,
+                q,
+                dim=1,
+            ).T
+
+            scores.append(batch_scores.detach().cpu())
+            labels.append(batch_labels.detach().cpu())
+
+    return torch.cat(scores), torch.cat(labels)

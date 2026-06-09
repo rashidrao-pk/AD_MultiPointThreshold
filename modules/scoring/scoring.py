@@ -15,5 +15,15 @@ def score_samples(loader, enc, dec, disc, config):
 
     if method == "reconstruction_l2":
         return reconstruction_l2_score(loader, enc, dec, device)
+    
+    if method == "reconstruction_quantiles":
+        return reconstruction_quantile_score(
+            loader,
+            enc,
+            dec,
+            device,
+            config.scoring.quantiles,
+        )
+
 
     raise ValueError(f"Unknown scoring method: {method}")

@@ -10,7 +10,7 @@ class SinglePointThreshold(ThresholdModel):
 
     def predict(self, scores):
 
-        scores = scores.squeeze()
+        scores = scores.float().view(-1)
 
         return (scores > self.threshold).int()
 
@@ -18,7 +18,7 @@ class SinglePointThreshold(ThresholdModel):
 def fit_single_point(scores, percentile=95):
 
     threshold = torch.quantile(
-        scores.squeeze(),
+        scores.float().view(-1),
         percentile/100
     )
 

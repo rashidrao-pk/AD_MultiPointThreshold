@@ -1,7 +1,8 @@
 class ThresholdModel:
     # abstract class of thresholding methods
-    def __init__(self, threshold):
-        self.threshold = threshold
+    # whatever the moethod, it must have a predict function
+    # to give binary classification {0: normal, 1: anomaly}
 
+    
     def predict(self, scores):
-        return scores > self.threshold
+        raise NotImplementedError

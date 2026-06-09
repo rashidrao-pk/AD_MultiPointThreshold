@@ -62,11 +62,20 @@ def main(config_path):
     # Evaluation 
     result = {}
     test_labels = prepare_binary_labels(test_labels, getattr(test_dataset, "class_to_idx", None))
-    metrics = ranking_metrics(test_scores.detach().cpu(), test_labels)
+    try:
+        metrics = ranking_metrics(test_scores.detach().cpu(), test_labels)
+    except:
+        print("[+] Ranking metrics computation using prediction classification.")
+        metrics = ranking_metrics(prediction, test_labels)
     result.update(metrics)
     print(f"[+] Ranking metrics: {result}")
 
+    threshold_metrics_result = threshold_metrics(prediction, test_labels)
+    result.update(threshold_metrics_result)
+    print(f"[+] Threshold metrics: {threshold_metrics_result}")
 
+
+    
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
