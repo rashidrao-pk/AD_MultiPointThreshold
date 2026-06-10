@@ -1,6 +1,10 @@
 # Multi-Point threshold for Anomaly Detection
 
 
+<p align="center">
+  <img src="https://readme-typing-svg.herokuapp.com?color=00E5C3&lines=MultiPoint+Threshold+for+Robust+Anomaly+Detection;Threshold+Calibration+%7C+Anomaly+Detection+%7C;Safety-Area+Inference+%7C+Thresholding+%7C+Alert+Publishing;University+of+Torino+%7C+DistriMuSe+Project&center=true&width=900&height=45">
+</p>
+
 ![Python](https://img.shields.io/badge/Python-3.9-blue)
 ![PyTorch](https://img.shields.io/badge/PyTorch-2.x-red)
 ![CUDA](https://img.shields.io/badge/CUDA-11.8-green)
@@ -564,3 +568,18 @@ python scripts/train.py --latent_dims 32 --safety_area RoboArm
 - Comprehensive documentation
 
 ---
+
+
+# 👥 Contributing
+
+We welcome contributions! Check out our [Contributing Guide](CONTRIBUTING.md) to get started.
+
+<p align="center">
+  <a href="https://github.com/rashidrao-pk/AD_MultiPointThreshold/graphs/contributors">
+    <img src="https://contrib.rocks/image?repo=rashidrao-pk/AD_MultiPointThreshold" alt="Contributors to AD/MultiPointThreshold" />
+  </a>
+</p>
+
+<p align="center">
+  <b>Thank you to all our contributors!</b>
+</p>
