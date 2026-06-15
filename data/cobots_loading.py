@@ -3,7 +3,8 @@ from PIL import Image
 
 import torch
 from torch.utils.data import Dataset, DataLoader
-from torchvision import transforms
+
+from .transforms import build_transforms
 
 
 IMG_EXTS = {".png", ".jpg", ".jpeg", ".bmp"}
@@ -28,14 +29,6 @@ def canonicalize_area(area):
     return AREA_ALIASES.get(key, area)
 
 
-def get_transforms(img_size):
-    return transforms.Compose([
-        transforms.Resize((img_size, img_size)),
-        transforms.ToTensor(),
-        transforms.Normalize([0.5] * 3, [0.5] * 3),
-    ])
-
-
 def list_images(root):
     root = Path(root)
     if not root.exists():
@@ -48,9 +41,13 @@ def list_images(root):
 
 
 class CobotsDataset(Dataset):
-    def __init__(self, samples, transform=None):
+    def __init__(self, samples, transform=None, classes=None, class_to_idx=None):
         self.samples = samples
+        self.imgs = samples
+        self.targets = [label for _, label in samples]
         self.transform = transform
+        self.classes = classes or ["normal", "unexpected_person"]
+        self.class_to_idx = class_to_idx or {name: idx for idx, name in enumerate(self.classes)}
 
     def __len__(self):
         return len(self.samples)
@@ -109,10 +106,25 @@ def get_dataloaders_cobots(cfg):
     if len(test_samples) == 0:
         raise RuntimeError("No test images found.")
 
-    transform = get_transforms(cfg.img_size)
+    train_transform, eval_transform = build_transforms(
+        cfg.img_size,
+        augmentation=getattr(cfg, "augmentation", "none"),
+    )
+    classes = ["normal", "unexpected_person"]
+    class_to_idx = {"normal": 0, "unexpected_person": 1}
 
-    train_dataset = CobotsDataset(train_samples, transform=transform)
-    test_dataset = CobotsDataset(test_samples, transform=transform)
+    train_dataset = CobotsDataset(
+        train_samples,
+        transform=train_transform,
+        classes=classes,
+        class_to_idx=class_to_idx,
+    )
+    test_dataset = CobotsDataset(
+        test_samples,
+        transform=eval_transform,
+        classes=classes,
+        class_to_idx=class_to_idx,
+    )
 
     train_loader = DataLoader(
         train_dataset,

@@ -1,6 +1,10 @@
 # Multi-Point threshold for Anomaly Detection
 
 
+<p align="center">
+  <img src="https://readme-typing-svg.herokuapp.com?color=00E5C3&lines=MultiPoint+Threshold+for+Robust+Anomaly+Detection;Threshold+Calibration+%7C+Anomaly+Detection+%7C;Safety-Area+Inference+%7C+Thresholding+%7C+Alert+Publishing;University+of+Torino+%7C+DistriMuSe+Project&center=true&width=900&height=45">
+</p>
+
 ![Python](https://img.shields.io/badge/Python-3.9-blue)
 ![PyTorch](https://img.shields.io/badge/PyTorch-2.x-red)
 ![CUDA](https://img.shields.io/badge/CUDA-11.8-green)
@@ -194,13 +198,13 @@ checkpoints/
 List available models:
 
 ```bash
-python scripts/model_loader.py --list
+python utils/scripts/model_loader.py --list
 ```
 
 Inspect a checkpoint and test a forward pass:
 
 ```bash
-python scripts/model_loader.py \
+python utils/scripts/model_loader.py \
   --model_path checkpoints/AD_Cobots_Synthetic/model_RoboArm_64.pt \
   --show_summary \
   --test_forward \
@@ -215,7 +219,7 @@ python scripts/model_loader.py \
 Example with the Cobots Synthetic / DistriMuSe UniGra RoboArm model:
 
 ```bash
-python scripts/inference.py \
+python utils/scripts/inference.py \
   --dataset Cobots_Synthetic \
   --safety_area RoboArm \
   --checkpoints checkpoints/AD_Cobots_Synthetic \
@@ -226,7 +230,7 @@ python scripts/inference.py \
 Example with all safety areas:
 
 ```bash
-python scripts/inference.py \
+python utils/scripts/inference.py \
   --dataset Cobots_Synthetic \
   --safety_area ALL \
   --checkpoints checkpoints/AD_Cobots_Synthetic \
@@ -242,7 +246,7 @@ python scripts/inference.py \
 Thresholds are dataset-specific and camera/setup-specific. If you change the dataset, camera view, preprocessing, or safety-area masks, recalibrate thresholds before reporting final results.
 
 ```bash
-python scripts/calibrate_threshold.py \
+python utils/scripts/calibrate_threshold.py \
   --safety_area RoboArm \
   --checkpoints checkpoints/AD_Cobots_Synthetic \
   --threshold_strategy percentile \
@@ -263,12 +267,12 @@ Train a `VAE-GAN` model on one (`PLeft`, `PRight`, `RoboArm`, `ConvBelt`) or all
 
 ```bash
 # Single area (default settings)
-python scripts/train.py --safety_area RoboArm
+python utils/scripts/train.py --safety_area RoboArm
 ```
 
 ```bash
 # All areas sequentially
-python scripts/train.py --safety_area ALL
+python utils/scripts/train.py --safety_area ALL
 ```
 </details>
 
@@ -279,9 +283,9 @@ Run anomaly detection from multiple `input sources` including following input so
 
 ```bash
 # Pre-cropped frames, evaluate against annotations
-python scripts/inference.py --dataset MVtec --object hazelnut
-python scripts/inference.py --dataset Robotics_Hazards
-python scripts/inference.py --dataset Cobots_Synthetic
+python utils/scripts/inference.py --dataset MVtec --object hazelnut
+python utils/scripts/inference.py --dataset Robotics_Hazards
+python utils/scripts/inference.py --dataset Cobots_Synthetic
 ```
 
 ---
@@ -313,24 +317,24 @@ export DATA_DIR=/path/to/your/datasets
 Train on a single safety area:
 ```bash
 # Train on RoboArm area with DistriMuSe dataset (default)
-python scripts/train.py --safety_area RoboArm
+python utils/scripts/train.py --safety_area RoboArm
 
 # Train on specific dataset
-python scripts/train.py --dataset Robotics_Hazards --safety_area PLeft
-python scripts/train.py --dataset MVtec --safety_area RoboArm
+python utils/scripts/train.py --dataset Robotics_Hazards --safety_area PLeft
+python utils/scripts/train.py --dataset MVtec --safety_area RoboArm
 ```
 
 ### Train All Safety Areas Sequentially
 ```bash
 # Train all 4 safety areas: PLeft, PRight, RoboArm, ConvBelt
-python scripts/train.py --safety_area ALL
+python utils/scripts/train.py --safety_area ALL
 ```
 
 ### Advanced Training Options
 
 ```bash
 # Custom training parameters
-python scripts/train.py \
+python utils/scripts/train.py \
   --dataset Cobots_Synthetic \
   --safety_area RoboArm \
   --epochs 300 \
@@ -343,10 +347,10 @@ python scripts/train.py \
   --verbose_level 2
 
 # Use different experimental settings
-python scripts/train.py --safety_area RoboArm --exp_type E3
+python utils/scripts/train.py --safety_area RoboArm --exp_type E3
 
 # Force rebuild train/val split
-python scripts/train.py --safety_area RoboArm --force_rebuild_split
+python utils/scripts/train.py --safety_area RoboArm --force_rebuild_split
 ```
 
 ### Training Configuration
@@ -364,13 +368,13 @@ Key training parameters:
 
 ```bash
 # MVtec dataset
-python scripts/train.py --dataset MVtec --safety_area RoboArm --epochs 200
+python utils/scripts/train.py --dataset MVtec --safety_area RoboArm --epochs 200
 
 # Robotics Hazards
-python scripts/train.py --dataset Robotics_Hazards --safety_area ConvBelt
+python utils/scripts/train.py --dataset Robotics_Hazards --safety_area ConvBelt
 
 # DistriMuSe synthetic (default)
-python scripts/train.py --dataset Cobots_Synthetic --safety_area ALL
+python utils/scripts/train.py --dataset Cobots_Synthetic --safety_area ALL
 ```
 
 ---
@@ -382,32 +386,32 @@ Use the model loader utility to inspect trained models:
 ### List Available Models
 ```bash
 # Show all models in checkpoint directory
-python scripts/model_loader.py --list
+python utils/scripts/model_loader.py --list
 
 # Show models in custom directory
-python scripts/model_loader.py --checkpoint /path/to/models --list
+python utils/scripts/model_loader.py --checkpoint /path/to/models --list
 ```
 
 ### Load and Inspect Specific Model
 ```bash
 # Load model by safety area
-python scripts/model_loader.py --safety_area RoboArm --show_summary
+python utils/scripts/model_loader.py --safety_area RoboArm --show_summary
 
 # Load specific checkpoint file
-python scripts/model_loader.py --model_path models/model_RoboArm_64.pt --show_summary
+python utils/scripts/model_loader.py --model_path models/model_RoboArm_64.pt --show_summary
 
 # Show detailed model architecture
-python scripts/model_loader.py --model_path models/model_RoboArm_64.pt \
+python utils/scripts/model_loader.py --model_path models/model_RoboArm_64.pt \
   --show_summary --verbose --latent_dims 64
 ```
 
 ### Test Model Forward Pass
 ```bash
 # Verify model works with forward pass test
-python scripts/model_loader.py --safety_area RoboArm --test_forward
+python utils/scripts/model_loader.py --safety_area RoboArm --test_forward
 
 # Test on GPU
-python scripts/model_loader.py --model_path models/model_RoboArm_64.pt \
+python utils/scripts/model_loader.py --model_path models/model_RoboArm_64.pt \
   --test_forward --device cuda
 ```
 
@@ -449,21 +453,21 @@ Encoder(
 ### Inference Configuration
 ```bash
 # Robotics Hazards dataset
-python scripts/inference.py \
+python utils/scripts/inference.py \
   --dataset Robotics_Hazards \
   --safety_area ALL \
   --checkpoints models/ \
   --threshold_dir results/thresholds/
 
 # MVtec dataset  
-python scripts/inference.py \
+python utils/scripts/inference.py \
   --dataset MVtec \
   --object hazelnut \
   --checkpoints models/MVtec/ \
   --threshold_dir results/thresholds/
 
 # DistriMuSe synthetic
-python scripts/inference.py \
+python utils/scripts/inference.py \
   --dataset Cobots_Synthetic \
   --safety_area RoboArm \
   --checkpoints models/ \
@@ -519,16 +523,16 @@ ls $DATA_DIR/Cobots_Synthetic
 ### Model Loading Issues
 ```bash
 # Check available models
-python scripts/model_loader.py --list
+python utils/scripts/model_loader.py --list
 
 # Verify model checkpoint integrity
-python scripts/model_loader.py --model_path models/model_RoboArm_64.pt --test_forward
+python utils/scripts/model_loader.py --model_path models/model_RoboArm_64.pt --test_forward
 ```
 
 ### CUDA/GPU Issues
 ```bash
 # Force CPU training
-python scripts/train.py --safety_area RoboArm  # Will auto-detect
+python utils/scripts/train.py --safety_area RoboArm  # Will auto-detect
 
 # Train on CPU explicitly
 python scripts/model_loader.py --safety_area RoboArm --device cpu
@@ -537,11 +541,11 @@ python scripts/model_loader.py --safety_area RoboArm --device cpu
 ### Out of Memory
 ```bash
 # Reduce batch size
-python scripts/train.py --batch_size 8 --safety_area RoboArm
+python utils/scripts/train.py --batch_size 8 --safety_area RoboArm
 
 # Reduce image resolution (modify in config)
 # Reduce latent dimensions
-python scripts/train.py --latent_dims 32 --safety_area RoboArm
+python utils/scripts/train.py --latent_dims 32 --safety_area RoboArm
 ```
 
 ---
@@ -564,3 +568,18 @@ python scripts/train.py --latent_dims 32 --safety_area RoboArm
 - Comprehensive documentation
 
 ---
+
+
+# 👥 Contributing
+
+We welcome contributions! Check out our [Contributing Guide](CONTRIBUTING.md) to get started.
+
+<p align="center">
+  <a href="https://github.com/rashidrao-pk/AD_MultiPointThreshold/graphs/contributors">
+    <img src="https://contrib.rocks/image?repo=rashidrao-pk/AD_MultiPointThreshold" alt="Contributors to AD/MultiPointThreshold" />
+  </a>
+</p>
+
+<p align="center">
+  <b>Thank you to all our contributors!</b>
+</p>

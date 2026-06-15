@@ -8,6 +8,7 @@ def score_samples(loader, enc, dec, disc, config):
     device = config.device
 
     if method == "reconstruction_mse":
+        
         return reconstruction_mse_score(loader, enc, dec, device)
 
     if method == "reconstruction_l1":

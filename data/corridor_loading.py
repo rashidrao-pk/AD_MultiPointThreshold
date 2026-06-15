@@ -2,18 +2,11 @@ from pathlib import Path
 from PIL import Image
 
 from torch.utils.data import Dataset, DataLoader
-from torchvision import transforms
+
+from .transforms import build_transforms
 
 
 IMG_EXTS = {".png", ".jpg", ".jpeg", ".bmp", ".webp"}
-
-
-def get_transforms(img_size):
-    return transforms.Compose([
-        transforms.Resize((img_size, img_size)),
-        transforms.ToTensor(),
-        transforms.Normalize([0.5] * 3, [0.5] * 3),
-    ])
 
 
 def list_images(root):
@@ -28,9 +21,13 @@ def list_images(root):
 
 
 class CorridorDataset(Dataset):
-    def __init__(self, samples, transform=None):
+    def __init__(self, samples, transform=None, classes=None, class_to_idx=None):
         self.samples = samples
+        self.imgs = samples
+        self.targets = [label for _, label in samples]
         self.transform = transform
+        self.classes = classes or ["normal", "anomaly"]
+        self.class_to_idx = class_to_idx or {name: idx for idx, name in enumerate(self.classes)}
 
     def __len__(self):
         return len(self.samples)
@@ -47,7 +44,10 @@ class CorridorDataset(Dataset):
 
 def get_dataloaders_corridor(cfg):
     root = Path(cfg.dataset_root)
-    transform = get_transforms(cfg.img_size)
+    train_transform, eval_transform = build_transforms(
+        cfg.img_size,
+        augmentation=getattr(cfg, "augmentation", "none"),
+    )
 
     train_normal_root = root / "train" / "normal"
     test_root = root / "test"
@@ -68,8 +68,20 @@ def get_dataloaders_corridor(cfg):
     if len(test_samples) == 0:
         raise RuntimeError(f"No test anomaly images found in: {test_root}")
 
-    train_dataset = CorridorDataset(train_samples, transform=transform)
-    test_dataset = CorridorDataset(test_samples, transform=transform)
+    classes = ["normal", "anomaly"]
+    class_to_idx = {"normal": 0, "anomaly": 1}
+    train_dataset = CorridorDataset(
+        train_samples,
+        transform=train_transform,
+        classes=classes,
+        class_to_idx=class_to_idx,
+    )
+    test_dataset = CorridorDataset(
+        test_samples,
+        transform=eval_transform,
+        classes=classes,
+        class_to_idx=class_to_idx,
+    )
 
     train_loader = DataLoader(
         train_dataset,
