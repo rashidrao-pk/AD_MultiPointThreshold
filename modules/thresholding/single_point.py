@@ -21,6 +21,5 @@ def fit_single_point(scores, percentile=95):
         scores.float().view(-1),
         percentile/100
     )
-    
 
     return SinglePointThreshold(threshold)

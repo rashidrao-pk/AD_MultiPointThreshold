@@ -1,0 +1,177 @@
+{
+  "train": {
+    "name": "train",
+    "num_samples": 6008,
+    "classes": [
+      "normal",
+      "unexpected_person"
+    ],
+    "class_to_idx": {
+      "normal": 0,
+      "unexpected_person": 1
+    },
+    "class_counts": {
+      "normal": 6008
+    },
+    "sample_records": [
+      {
+        "path": "/Users/rashid/data/DS/AD/Cobots_Synthetic/train/PLeft/normal/fronttop_0000_unknown.png",
+        "file_name": "fronttop_0000_unknown.png",
+        "folder_name": "normal",
+        "class_idx": 0,
+        "class_name": "normal"
+      },
+      {
+        "path": "/Users/rashid/data/DS/AD/Cobots_Synthetic/train/PLeft/normal/fronttop_0001_unknown.png",
+        "file_name": "fronttop_0001_unknown.png",
+        "folder_name": "normal",
+        "class_idx": 0,
+        "class_name": "normal"
+      },
+      {
+        "path": "/Users/rashid/data/DS/AD/Cobots_Synthetic/train/PLeft/normal/fronttop_0002_unknown.png",
+        "file_name": "fronttop_0002_unknown.png",
+        "folder_name": "normal",
+        "class_idx": 0,
+        "class_name": "normal"
+      },
+      {
+        "path": "/Users/rashid/data/DS/AD/Cobots_Synthetic/train/PLeft/normal/fronttop_0003_unknown.png",
+        "file_name": "fronttop_0003_unknown.png",
+        "folder_name": "normal",
+        "class_idx": 0,
+        "class_name": "normal"
+      },
+      {
+        "path": "/Users/rashid/data/DS/AD/Cobots_Synthetic/train/PLeft/normal/fronttop_0004_unknown.png",
+        "file_name": "fronttop_0004_unknown.png",
+        "folder_name": "normal",
+        "class_idx": 0,
+        "class_name": "normal"
+      },
+      {
+        "path": "/Users/rashid/data/DS/AD/Cobots_Synthetic/train/PLeft/normal/fronttop_0005_unknown.png",
+        "file_name": "fronttop_0005_unknown.png",
+        "folder_name": "normal",
+        "class_idx": 0,
+        "class_name": "normal"
+      },
+      {
+        "path": "/Users/rashid/data/DS/AD/Cobots_Synthetic/train/PLeft/normal/fronttop_0006_unknown.png",
+        "file_name": "fronttop_0006_unknown.png",
+        "folder_name": "normal",
+        "class_idx": 0,
+        "class_name": "normal"
+      },
+      {
+        "path": "/Users/rashid/data/DS/AD/Cobots_Synthetic/train/PLeft/normal/fronttop_0007_unknown.png",
+        "file_name": "fronttop_0007_unknown.png",
+        "folder_name": "normal",
+        "class_idx": 0,
+        "class_name": "normal"
+      },
+      {
+        "path": "/Users/rashid/data/DS/AD/Cobots_Synthetic/train/PLeft/normal/fronttop_0008_unknown.png",
+        "file_name": "fronttop_0008_unknown.png",
+        "folder_name": "normal",
+        "class_idx": 0,
+        "class_name": "normal"
+      },
+      {
+        "path": "/Users/rashid/data/DS/AD/Cobots_Synthetic/train/PLeft/normal/fronttop_0009_unknown.png",
+        "file_name": "fronttop_0009_unknown.png",
+        "folder_name": "normal",
+        "class_idx": 0,
+        "class_name": "normal"
+      }
+    ]
+  },
+  "test": {
+    "name": "test",
+    "num_samples": 5864,
+    "classes": [
+      "normal",
+      "unexpected_person"
+    ],
+    "class_to_idx": {
+      "normal": 0,
+      "unexpected_person": 1
+    },
+    "class_counts": {
+      "normal": 5698,
+      "unexpected_person": 166
+    },
+    "sample_records": [
+      {
+        "path": "/Users/rashid/data/DS/AD/Cobots_Synthetic/test/unexpected_person/PLeft/normal/1751540057414289200_0000_10000010000000000.jpg",
+        "file_name": "1751540057414289200_0000_10000010000000000.jpg",
+        "folder_name": "normal",
+        "class_idx": 0,
+        "class_name": "normal"
+      },
+      {
+        "path": "/Users/rashid/data/DS/AD/Cobots_Synthetic/test/unexpected_person/PLeft/normal/1751540057618711700_0001_10000010000000000.jpg",
+        "file_name": "1751540057618711700_0001_10000010000000000.jpg",
+        "folder_name": "normal",
+        "class_idx": 0,
+        "class_name": "normal"
+      },
+      {
+        "path": "/Users/rashid/data/DS/AD/Cobots_Synthetic/test/unexpected_person/PLeft/normal/1751540057814921500_0002_10000010000000000.jpg",
+        "file_name": "1751540057814921500_0002_10000010000000000.jpg",
+        "folder_name": "normal",
+        "class_idx": 0,
+        "class_name": "normal"
+      },
+      {
+        "path": "/Users/rashid/data/DS/AD/Cobots_Synthetic/test/unexpected_person/PLeft/normal/1751540058016968900_0003_10000010000000000.jpg",
+        "file_name": "1751540058016968900_0003_10000010000000000.jpg",
+        "folder_name": "normal",
+        "class_idx": 0,
+        "class_name": "normal"
+      },
+      {
+        "path": "/Users/rashid/data/DS/AD/Cobots_Synthetic/test/unexpected_person/PLeft/normal/1751540058225298700_0004_10000010000000000.jpg",
+        "file_name": "1751540058225298700_0004_10000010000000000.jpg",
+        "folder_name": "normal",
+        "class_idx": 0,
+        "class_name": "normal"
+      },
+      {
+        "path": "/Users/rashid/data/DS/AD/Cobots_Synthetic/test/unexpected_person/PLeft/normal/1751540058398410400_0005_10000010000000000.jpg",
+        "file_name": "1751540058398410400_0005_10000010000000000.jpg",
+        "folder_name": "normal",
+        "class_idx": 0,
+        "class_name": "normal"
+      },
+      {
+        "path": "/Users/rashid/data/DS/AD/Cobots_Synthetic/test/unexpected_person/PLeft/normal/1751540058609105900_0006_10000010000000000.jpg",
+        "file_name": "1751540058609105900_0006_10000010000000000.jpg",
+        "folder_name": "normal",
+        "class_idx": 0,
+        "class_name": "normal"
+      },
+      {
+        "path": "/Users/rashid/data/DS/AD/Cobots_Synthetic/test/unexpected_person/PLeft/normal/1751540058800234600_0007_10000010000000000.jpg",
+        "file_name": "1751540058800234600_0007_10000010000000000.jpg",
+        "folder_name": "normal",
+        "class_idx": 0,
+        "class_name": "normal"
+      },
+      {
+        "path": "/Users/rashid/data/DS/AD/Cobots_Synthetic/test/unexpected_person/PLeft/normal/1751540059029175700_0008_10000010000000000.jpg",
+        "file_name": "1751540059029175700_0008_10000010000000000.jpg",
+        "folder_name": "normal",
+        "class_idx": 0,
+        "class_name": "normal"
+      },
+      {
+        "path": "/Users/rashid/data/DS/AD/Cobots_Synthetic/test/unexpected_person/PLeft/normal/1751540059223283700_0009_10000010000000000.jpg",
+        "file_name": "1751540059223283700_0009_10000010000000000.jpg",
+        "folder_name": "normal",
+        "class_idx": 0,
+        "class_name": "normal"
+      }
+    ]
+  }
+}

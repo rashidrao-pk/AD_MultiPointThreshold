@@ -1,4 +1,4 @@
-device: cpu
+device: auto # options: auto, cpu, cuda, mps
 
 data:
   name: MVTec
@@ -6,9 +6,9 @@ data:
   category: zipper
   img_size: 128
   batch_size: 16
-  num_workers: 2
-  pin_memory: true
-
+  num_workers: 0
+  pin_memory: false
+  augmentation: light
 
 model:
   name: vaegan
@@ -23,8 +23,6 @@ scoring:
   method: reconstruction_l1
   quantiles: [0.5, 0.75, 0.9, 0.95, 0.99]
 
-
-
 threshold:
   method: single_point
   percentile: 95 # 
@@ -33,7 +31,31 @@ threshold:
 output:
   dir: results/exp
 
-
+experiment:
+  models:
+    - advis_vaegan
+    - simple_vaegan
+  scoring_setups:
+    - name: l1_mean
+      method: reconstruction_l1
+    - name: l2_sum
+      method: reconstruction_l2
+    - name: quantiles
+      method: reconstruction_quantiles
+      quantiles: [0.5, 0.75, 0.9, 0.95, 0.99]
+  threshold_setups:
+    - name: single_p95
+      method: single_point
+      percentile: 95
+      decision_rule: any
+    - name: single_p99
+      method: single_point
+      percentile: 99
+      decision_rule: any
+    - name: multipoint_p95_any
+      method: multi_point
+      percentile: 95
+      decision_rule: any
 
 # decision rules for multi-point thresholding:
 # - any: if any of the scores exceed the threshold, classify as anomaly

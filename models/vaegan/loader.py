@@ -19,7 +19,7 @@ def get_checkpoint_path(model_cfg, data_cfg):
     else:
         raise ValueError(f"Unknown dataset name: {data_cfg.name}")
 
-    return Path(model_cfg.checkpoint_root) / dataset_folder / "checkpoints" / ckpt_name
+    return Path(model_cfg.checkpoint_root) / dataset_folder / ckpt_name
 
 
 def load_model(config, device):
@@ -40,4 +40,11 @@ def load_model(config, device):
     decoder.load_state_dict(checkpoint['decoder_state_dict'])
     discriminator.load_state_dict(checkpoint['discriminator_state_dict'])
 
+<<<<<<< HEAD
+=======
+    encoder.eval()
+    decoder.eval()
+    discriminator.eval()
+
+>>>>>>> a9607826444189f79401b05d911b8c6e20b06510
     return encoder, decoder, discriminator

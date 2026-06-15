@@ -1,0 +1,176 @@
+{
+  "train": {
+    "name": "train",
+    "num_samples": 45270,
+    "classes": [
+      "normal",
+      "anomaly"
+    ],
+    "class_to_idx": {
+      "normal": 0,
+      "anomaly": 1
+    },
+    "class_counts": {
+      "normal": 45270
+    },
+    "sample_records": [
+      {
+        "path": "/Users/rashid/data/DS/AD/processed_corridor/train/normal/000187_512_512.jpg",
+        "file_name": "000187_512_512.jpg",
+        "folder_name": "normal",
+        "class_idx": 0,
+        "class_name": "normal"
+      },
+      {
+        "path": "/Users/rashid/data/DS/AD/processed_corridor/train/normal/000188_512_512.jpg",
+        "file_name": "000188_512_512.jpg",
+        "folder_name": "normal",
+        "class_idx": 0,
+        "class_name": "normal"
+      },
+      {
+        "path": "/Users/rashid/data/DS/AD/processed_corridor/train/normal/000189_512_512.jpg",
+        "file_name": "000189_512_512.jpg",
+        "folder_name": "normal",
+        "class_idx": 0,
+        "class_name": "normal"
+      },
+      {
+        "path": "/Users/rashid/data/DS/AD/processed_corridor/train/normal/000190_512_512.jpg",
+        "file_name": "000190_512_512.jpg",
+        "folder_name": "normal",
+        "class_idx": 0,
+        "class_name": "normal"
+      },
+      {
+        "path": "/Users/rashid/data/DS/AD/processed_corridor/train/normal/000191_512_512.jpg",
+        "file_name": "000191_512_512.jpg",
+        "folder_name": "normal",
+        "class_idx": 0,
+        "class_name": "normal"
+      },
+      {
+        "path": "/Users/rashid/data/DS/AD/processed_corridor/train/normal/000192_512_512.jpg",
+        "file_name": "000192_512_512.jpg",
+        "folder_name": "normal",
+        "class_idx": 0,
+        "class_name": "normal"
+      },
+      {
+        "path": "/Users/rashid/data/DS/AD/processed_corridor/train/normal/000193_512_512.jpg",
+        "file_name": "000193_512_512.jpg",
+        "folder_name": "normal",
+        "class_idx": 0,
+        "class_name": "normal"
+      },
+      {
+        "path": "/Users/rashid/data/DS/AD/processed_corridor/train/normal/000194_512_512.jpg",
+        "file_name": "000194_512_512.jpg",
+        "folder_name": "normal",
+        "class_idx": 0,
+        "class_name": "normal"
+      },
+      {
+        "path": "/Users/rashid/data/DS/AD/processed_corridor/train/normal/000195_512_512.jpg",
+        "file_name": "000195_512_512.jpg",
+        "folder_name": "normal",
+        "class_idx": 0,
+        "class_name": "normal"
+      },
+      {
+        "path": "/Users/rashid/data/DS/AD/processed_corridor/train/normal/000196_512_512.jpg",
+        "file_name": "000196_512_512.jpg",
+        "folder_name": "normal",
+        "class_idx": 0,
+        "class_name": "normal"
+      }
+    ]
+  },
+  "test": {
+    "name": "test",
+    "num_samples": 84576,
+    "classes": [
+      "normal",
+      "anomaly"
+    ],
+    "class_to_idx": {
+      "normal": 0,
+      "anomaly": 1
+    },
+    "class_counts": {
+      "anomaly": 84576
+    },
+    "sample_records": [
+      {
+        "path": "/Users/rashid/data/DS/AD/processed_corridor/test/box/006232_512_512.jpg",
+        "file_name": "006232_512_512.jpg",
+        "folder_name": "box",
+        "class_idx": 1,
+        "class_name": "anomaly"
+      },
+      {
+        "path": "/Users/rashid/data/DS/AD/processed_corridor/test/box/006233_512_512.jpg",
+        "file_name": "006233_512_512.jpg",
+        "folder_name": "box",
+        "class_idx": 1,
+        "class_name": "anomaly"
+      },
+      {
+        "path": "/Users/rashid/data/DS/AD/processed_corridor/test/box/006234_512_512.jpg",
+        "file_name": "006234_512_512.jpg",
+        "folder_name": "box",
+        "class_idx": 1,
+        "class_name": "anomaly"
+      },
+      {
+        "path": "/Users/rashid/data/DS/AD/processed_corridor/test/box/006235_512_512.jpg",
+        "file_name": "006235_512_512.jpg",
+        "folder_name": "box",
+        "class_idx": 1,
+        "class_name": "anomaly"
+      },
+      {
+        "path": "/Users/rashid/data/DS/AD/processed_corridor/test/box/006236_512_512.jpg",
+        "file_name": "006236_512_512.jpg",
+        "folder_name": "box",
+        "class_idx": 1,
+        "class_name": "anomaly"
+      },
+      {
+        "path": "/Users/rashid/data/DS/AD/processed_corridor/test/box/006237_512_512.jpg",
+        "file_name": "006237_512_512.jpg",
+        "folder_name": "box",
+        "class_idx": 1,
+        "class_name": "anomaly"
+      },
+      {
+        "path": "/Users/rashid/data/DS/AD/processed_corridor/test/box/006238_512_512.jpg",
+        "file_name": "006238_512_512.jpg",
+        "folder_name": "box",
+        "class_idx": 1,
+        "class_name": "anomaly"
+      },
+      {
+        "path": "/Users/rashid/data/DS/AD/processed_corridor/test/box/006239_512_512.jpg",
+        "file_name": "006239_512_512.jpg",
+        "folder_name": "box",
+        "class_idx": 1,
+        "class_name": "anomaly"
+      },
+      {
+        "path": "/Users/rashid/data/DS/AD/processed_corridor/test/box/006240_512_512.jpg",
+        "file_name": "006240_512_512.jpg",
+        "folder_name": "box",
+        "class_idx": 1,
+        "class_name": "anomaly"
+      },
+      {
+        "path": "/Users/rashid/data/DS/AD/processed_corridor/test/box/006241_512_512.jpg",
+        "file_name": "006241_512_512.jpg",
+        "folder_name": "box",
+        "class_idx": 1,
+        "class_name": "anomaly"
+      }
+    ]
+  }
+}
