@@ -36,8 +36,6 @@ conda activate AD
 pip install -r requirements.txt
 ```
 
-
-
 ---
 
 ## 2. Download Datasets and Model Checkpoints
@@ -106,7 +104,7 @@ data/
 Set the dataset root path:
 
 ```bash
-export DATA_DIR=$(pwd)/data
+export DATA_ROOT=$(pwd)/data
 ```
 
 </details>
@@ -290,23 +288,57 @@ python scripts/inference.py --dataset Cobots_Synthetic
 
 ---
 
-## 5. Updated Dataset Configuration
+## 5. Machine-Specific Configuration
 
-The project now supports seamless dataset switching with configuration support. Update `configs/config.yaml` with your dataset paths:
+The project supports machine-specific paths without committing personal drive
+locations. Keep shared defaults in git, and put personal paths in
+`configs/local.yaml` or environment variables.
+
+Start from the example file:
+
+```bash
+cp configs/local.example.yaml configs/local.yaml
+```
+
+Then edit `configs/local.yaml` for your machine:
 
 ```yaml
-data:
-  base_dir: "/path/to/your/datasets"
-  paths:
-    MVtec: null                  # Will use base_dir/MVtec
-    Robotics_Hazards: null       # Will use base_dir/Robotics_Hazards
-    Cobots_Synthetic: null      # Will use base_dir/Cobots_Synthetic
+paths:
+  data_root: "/path/to/datasets"
+  models_root: "/path/to/models"
+  checkpoints_root: "/path/to/checkpoints"
+  results_root: "/path/to/results"
+
+datasets:
+  MVtec: "/path/to/datasets/MVtec"
+  Robotics_Hazards: "/path/to/datasets/Robotics_Hazards"
+  Cobots_Synthetic: "/path/to/datasets/Cobots_Synthetic"
 ```
 
-Or set via environment variable:
+`configs/local.yaml` is ignored by git, so each collaborator can keep their own
+paths. You can also set paths with environment variables:
+
 ```bash
-export DATA_DIR=/path/to/your/datasets
+export DATA_ROOT=/path/to/datasets
+export MODELS_ROOT=/path/to/models
+export CHECKPOINTS_ROOT=/path/to/checkpoints
+export RESULTS_ROOT=/path/to/results
+export VAEGAN_ROOT=/path/to/models/vaegan
 ```
+
+On Windows PowerShell:
+
+```powershell
+$env:DATA_ROOT="E:\Datasets"
+$env:MODELS_ROOT="E:\Models"
+$env:CHECKPOINTS_ROOT="E:\Checkpoints"
+$env:RESULTS_ROOT="E:\Results"
+$env:VAEGAN_ROOT="E:\Models\vaegan"
+```
+
+At startup, config loading expands environment variables and validates required
+dataset/model paths. If a path is missing, the program raises a clear error
+showing which config key needs to be fixed.
 
 ---
 

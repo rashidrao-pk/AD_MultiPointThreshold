@@ -22,13 +22,13 @@ def _reconstruction_score(loader, enc, dec, device, metric="mse"):
     labels = []
 
     with torch.inference_mode():
-        for images, batch_labels in tqdm(loader, desc=f"Scoring ({metric})"):
-            images = images.to(device, non_blocking=True)
+        for data, batch_labels in tqdm(loader, desc=f"Scoring ({metric})"):
+            data = data.to(device, non_blocking=True)
 
-            mu, _ = enc(images)
+            mu, _ = enc(data)
             recon = dec(mu)
 
-            diff = images - recon
+            diff = data - recon
 
             if metric == "mse":
                 batch_scores = (diff ** 2).mean(dim=(1, 2, 3))
@@ -55,13 +55,13 @@ def reconstruction_quantile_score(loader, enc, dec, device, quantiles):
     q = torch.tensor(quantiles, device=device)
 
     with torch.inference_mode():
-        for images, batch_labels in tqdm(loader, desc="Scoring (quantiles)"):
-            images = images.to(device, non_blocking=True)
+        for data, batch_labels in tqdm(loader, desc="Scoring (quantiles)"):
+            data = data.to(device, non_blocking=True)
 
-            mu, _ = enc(images)
+            mu, _ = enc(data)
             recon = dec(mu)
 
-            anomaly_map = (images - recon).abs()
+            anomaly_map = (data - recon).abs()  ## TODO: we can also try squared error here, but for now we stick to absolute error as it is more interpretable and less sensitive to outliers.
             flat_map = anomaly_map.view(anomaly_map.size(0), -1)
 
             batch_scores = torch.quantile(

@@ -17,12 +17,15 @@ def main(config_path, suffix):
 
     # Set up device for GPU training
     device = config.device if torch.cuda.is_available() else "cpu"
+    config.device = device
     print(f"[+] Using device: {device}")
 
     # loading the data
 
     train_loader, test_loader, train_dataset, test_dataset = load_data(config)
-
+    for data, labels in train_loader:
+        print(f"[+] Train batch data shape: {data.shape}, labels shape: {labels.shape}")
+        break
     print(f"[+] Train dataset size: {len(train_dataset)}")
     print(f"[+] Test dataset size: {len(test_dataset)}")
 
@@ -60,13 +63,15 @@ def main(config_path, suffix):
 
 
 
-    # Evaluation 
+    # C666 Evaluation 
     result = {}
     raw_test_labels = test_labels # to save later
     test_labels = prepare_binary_labels(test_labels, getattr(test_dataset, "class_to_idx", None))
     try:
         metrics = ranking_metrics(test_scores.detach().cpu(), test_labels)
     except:
+        # TODO --> When using quantile-based scoring, the scores are not necessarily --> Good Format,
+        # so we cannot use them directly for ranking metrics, we need to use the binary predictions instead.
         print("[+] Ranking metrics computation using prediction classification.")
         print(prediction.shape, test_labels.shape)
         metrics = ranking_metrics(prediction, test_labels)

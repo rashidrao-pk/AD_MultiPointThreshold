@@ -314,32 +314,41 @@ def create_video_from_frames(paths,suffix=None,data_type = 'full',video_for='tra
 ##################################################################################
 def get_paths(paths,dataset_type='SR', verbose=False):
     import platform
-    platform_node = platform.node()       
-        
-    if os.name=='nt':
-        # from matplotlib import rc
-        # rc('text',usetex=True)
-        # rc('text.latex', preamble='\\usepackage{color}')
-        platform_node = platform.node()
-        if platform_node=='Rashid-Unito':
-            paths.path_results = 'E:/Cloud/RashidPHD/Codes/DistriMuSe/AD_CAD_v3'
-            paths.path_datasets_main        = rf'D:/DS/{dataset_type}/'
-            paths.path_results_local        = rf'E:/PHD/datacloud_data/repos/AD_CAD_v3'
-        elif platform_node=='DESKTOP-Q14PULG':
-            paths.path_results = r'C:/rashid/RashidPHD/Codes/DistriMuSe/AD_CAD_v3'
-            paths.path_datasets_main         = r'C:/DS/'
-            paths.path_results_local        = r'C:/rashid_data/codes/DistriMuSe'
-    elif os.name=='posix':
-        if 'epito' in platform_node:
-            paths.path_results        = '/beegfs/home/mrashid/repos/AD_CAD_v3'
-            paths.path_datasets_main  = f'/beegfs/home/mrashid/datasets/{dataset_type}'
-            paths.path_results_local  = '/beegfs/home/mrashid/repos/AD_CAD_v3'
-        if 'distrimuse' in platform_node:
-            paths.path_results        = os.getcwd()
-            paths.path_datasets_main  = f'/home/unito/advis/DS/{dataset_type}'
-            paths.path_results_local  = '/home/unito/advis/'
+
+    from utils.general import deep_merge, expand_env_value, load_yaml_dict
+
+    config_path = os.environ.get("PROJECT_CONFIG", "configs/default.yaml")
+    local_path = os.environ.get(
+        "PROJECT_LOCAL_CONFIG",
+        os.path.join(os.path.dirname(config_path), "local.yaml"),
+    )
+    config = deep_merge(load_yaml_dict(config_path), load_yaml_dict(local_path))
+    config = expand_env_value(config)
+    path_config = config.get("paths", {})
+
+    paths.path_results = path_config.get("results_root", os.getcwd())
+    paths.path_datasets_main = os.path.join(
+        path_config.get("data_root", os.path.join(os.getcwd(), "data")),
+        dataset_type,
+    )
+    paths.path_results_local = path_config.get("local_results_root", paths.path_results)
+
+    missing = [
+        ("paths.data_root", paths.path_datasets_main),
+        ("paths.results_root", paths.path_results),
+        ("paths.local_results_root", paths.path_results_local),
+    ]
+    missing = [(name, value) for name, value in missing if value and not os.path.exists(value)]
+    if missing:
+        details = "\n".join(f"  - {name}: {value}" for name, value in missing)
+        raise FileNotFoundError(
+            "Configured path(s) do not exist. Set DATA_ROOT/RESULTS_ROOT or "
+            "create configs/local.yaml for this machine:\n"
+            f"{details}"
+        )
 
     if verbose:
+        platform_node = platform.node()
         print(f'system -- OS({os.name}) - user({platform_node})')
         print('-'*50)
     return paths

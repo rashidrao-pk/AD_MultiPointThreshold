@@ -10,23 +10,20 @@ datasets:
   available:
     - name: "MVtec"
       description: "MVTec Anomaly Detection Dataset"
-      # path: "${DATA_DIR}/MVtec"
-      path: "D://DS//AD//mvtec_preprocessed"
+      path: "${MVTEC_DATASET_ROOT:-${DATA_ROOT:-data}/MVtec}"
       default_object: "hazelnut"
       safety_areas: null  # MVtec doesn't use safety areas
     
     - name: "Robotics_Hazards"
       description: "Robotics Hazards Dataset"
-      # path: "${DATA_DIR}/Robotics_Hazards"
-      path: "D://DS//AD//hazards_robot//corridors//processed_corridor"
+      path: "${ROBOTICS_HAZARDS_DATASET_ROOT:-${DATA_ROOT:-data}/Robotics_Hazards}"
       # safety_areas: ["PLeft", "PRight", "RoboArm", "ConvBelt"]
     
     - name: "Cobots_Synthetic"
       description: "DistriMuSe Synthetic Palletizing Dataset (University of Granada)"
-      # path: "${DATA_DIR}/Cobots_Synthetic"
-      path: "D://DS//AD//Cobots_Synthetic"
-      path_train: "D://DS//AD//Cobots_Synthetic//train"
-      path_test: "D://DS//AD//Cobots_Synthetic//test"
+      path: "${COBOTS_DATASET_ROOT:-${DATA_ROOT:-data}/Cobots_Synthetic}"
+      path_train: "${COBOTS_DATASET_ROOT:-${DATA_ROOT:-data}/Cobots_Synthetic}/train"
+      path_test: "${COBOTS_DATASET_ROOT:-${DATA_ROOT:-data}/Cobots_Synthetic}/test"
       safety_areas: ["PLeft", "PRight", "RoboArm", "ConvBelt"]
   
   # Default dataset to use if none is specified
@@ -37,8 +34,8 @@ datasets:
 # ============================================================================
 data:
   # Base directory containing all datasets
-  # You can set this via environment variable: export DATA_DIR=/path/to/datasets
-  base_dir: "${DATA_DIR:-.}"
+  # You can set this via environment variable: export DATA_ROOT=/path/to/datasets
+  base_dir: "${DATA_ROOT:-data}"
   
   # Individual dataset paths (override base_dir if needed)
   paths:

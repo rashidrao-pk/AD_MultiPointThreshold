@@ -2,7 +2,7 @@ device: cuda
 
 data:
   name: Robotics_Hazards
-  dataset_root: "/gpfs/workdir/zianiab/data/raw/processed_corridor"
+  dataset_root: "${ROBOTICS_HAZARDS_DATASET_ROOT:-${DATA_ROOT:-data}/Robotics_Hazards}"
   category: corridor
   img_size: 128
   batch_size: 512
@@ -12,7 +12,7 @@ data:
 
 model:
   name: vaegan
-  checkpoint_root: "/gpfs/workdir/zianiab/models/vaegan"
+  checkpoint_root: "${VAEGAN_ROOT:-models/vaegan}"
   latent_dim: 64
   pretrained: true
 

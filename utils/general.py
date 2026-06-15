@@ -1,7 +1,112 @@
-import yaml
-from types import SimpleNamespace
+import copy
+import os
+import re
 import time
 from pathlib import Path
+from types import SimpleNamespace
+
+import yaml
+
+
+ENV_PATTERN = re.compile(r"\$\{([^}:]+)(?::-([^}]*))?\}")
+
+
+def deep_merge(base, override):
+    result = copy.deepcopy(base)
+    for key, value in (override or {}).items():
+        if (
+            isinstance(value, dict)
+            and isinstance(result.get(key), dict)
+        ):
+            result[key] = deep_merge(result[key], value)
+        else:
+            result[key] = copy.deepcopy(value)
+    return result
+
+
+def expand_env_value(value):
+    if isinstance(value, str):
+        def replace(match):
+            name, default = match.group(1), match.group(2)
+            return os.environ.get(name, default or "")
+
+        previous = None
+        expanded = value
+        while previous != expanded:
+            previous = expanded
+            expanded = ENV_PATTERN.sub(replace, expanded)
+        return os.path.expanduser(expanded)
+
+    if isinstance(value, dict):
+        return {k: expand_env_value(v) for k, v in value.items()}
+
+    if isinstance(value, list):
+        return [expand_env_value(v) for v in value]
+
+    return value
+
+
+def load_yaml_dict(path):
+    path = Path(path)
+    if not path.exists():
+        return {}
+
+    with open(path, "r", encoding="utf-8") as f:
+        return yaml.safe_load(f) or {}
+
+
+def get_local_config_path(config_path, local_config_path=None):
+    if local_config_path:
+        return Path(local_config_path)
+
+    env_path = os.environ.get("PROJECT_LOCAL_CONFIG")
+    if env_path:
+        return Path(env_path)
+
+    return Path(config_path).parent / "local.yaml"
+
+
+def validate_existing_paths(cfg_dict):
+    missing = []
+
+    data = cfg_dict.get("data", {})
+    if isinstance(data, dict):
+        for key in ("dataset_root", "base_dir"):
+            value = data.get(key)
+            if value and not Path(value).exists():
+                missing.append((f"data.{key}", value))
+
+        paths = data.get("paths", {})
+        if isinstance(paths, dict):
+            for name, value in paths.items():
+                if value and not Path(value).exists():
+                    missing.append((f"data.paths.{name}", value))
+
+    datasets = cfg_dict.get("datasets", {}).get("available", [])
+    if isinstance(datasets, list):
+        for dataset in datasets:
+            if not isinstance(dataset, dict):
+                continue
+            name = dataset.get("name", "<unnamed>")
+            for key in ("path", "path_train", "path_test"):
+                value = dataset.get(key)
+                if value and not Path(value).exists():
+                    missing.append((f"datasets.available.{name}.{key}", value))
+
+    model = cfg_dict.get("model", {})
+    if isinstance(model, dict):
+        for key in ("checkpoint_root", "checkpoints_dir"):
+            value = model.get(key)
+            if value and not Path(value).exists():
+                missing.append((f"model.{key}", value))
+
+    if missing:
+        details = "\n".join(f"  - {key}: {value}" for key, value in missing)
+        raise FileNotFoundError(
+            "Configured path(s) do not exist. Set environment variables or "
+            "create configs/local.yaml for this machine:\n"
+            f"{details}"
+        )
 
 def dict_to_namespace(d):
     if isinstance(d, dict):
@@ -10,9 +115,17 @@ def dict_to_namespace(d):
         })
     return d
 
-def read_config(path):
-    with open(path, "r") as f:
-        cfg_dict = yaml.safe_load(f)
+def read_config(path, local_config_path=None, validate_paths=True):
+    cfg_dict = load_yaml_dict(path)
+
+    local_path = get_local_config_path(path, local_config_path)
+    if local_path.exists():
+        cfg_dict = deep_merge(cfg_dict, load_yaml_dict(local_path))
+
+    cfg_dict = expand_env_value(cfg_dict)
+
+    if validate_paths:
+        validate_existing_paths(cfg_dict)
 
     return dict_to_namespace(cfg_dict)
 

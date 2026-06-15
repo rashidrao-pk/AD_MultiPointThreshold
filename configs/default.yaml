@@ -1,0 +1,17 @@
+# Machine-independent defaults. Override these in configs/local.yaml or with
+# environment variables on each machine.
+
+paths:
+  data_root: "${DATA_ROOT:-data}"
+  models_root: "${MODELS_ROOT:-models}"
+  checkpoints_root: "${CHECKPOINTS_ROOT:-checkpoints}"
+  results_root: "${RESULTS_ROOT:-results}"
+  local_results_root: "${LOCAL_RESULTS_ROOT:-${RESULTS_ROOT:-results}}"
+
+datasets:
+  MVtec: "${MVTEC_DATASET_ROOT:-${DATA_ROOT:-data}/MVtec}"
+  Robotics_Hazards: "${ROBOTICS_HAZARDS_DATASET_ROOT:-${DATA_ROOT:-data}/Robotics_Hazards}"
+  Cobots_Synthetic: "${COBOTS_DATASET_ROOT:-${DATA_ROOT:-data}/Cobots_Synthetic}"
+
+models:
+  vaegan_root: "${VAEGAN_ROOT:-models/vaegan}"

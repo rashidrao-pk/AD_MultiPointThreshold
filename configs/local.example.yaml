@@ -1,0 +1,83 @@
+device: cuda
+
+data:
+  name: Cobots_Synthetic
+  dataset_root: "D:/DS/AD/Cobots_Synthetic"
+
+  category: PLeft
+  img_size: 128
+  batch_size: 64
+  num_workers: 2
+  pin_memory: true
+
+
+model:
+  name: vaegan
+  checkpoint_root: "E:/Cloud/RashidPHD/Codes/DistriMuSe/AD_MultiPointThreshold/checkpoints"
+  latent_dim: 64
+  pretrained: true
+
+scoring:
+  method: reconstruction_l1
+  quantiles: [0.5, 0.75, 0.9, 0.95, 0.99]
+
+
+
+threshold:
+  method: single_point
+  percentile: 95 # 
+  decision_rule: any 
+
+output:
+  dir: results/exp
+
+
+
+# decision rules for multi-point thresholding:
+# - any: if any of the scores exceed the threshold, classify as anomaly
+# - all: if all scores exceed the threshold, classify as anomaly
+# - majority: if more than half of the scores exceed the threshold, classify as anomaly
+
+
+
+# device: cuda
+
+# data:
+#   name: MVTec
+#   dataset_root: "D:/DS/AD/MVtec"
+#   category: zipper
+#   img_size: 128
+#   batch_size: 16
+#   num_workers: 2
+#   pin_memory: true
+
+
+# model:
+#   name: vaegan
+#   checkpoint_root: "E:/Cloud/RashidPHD/Codes/DistriMuSe/AD_MultiPointThreshold/checkpoints"
+#   latent_dim: 64
+#   pretrained: true # TODO --> should support verification of pretrained models else train from scratch
+#   recon_loss: BCE
+#   XYZ_loss: MSE
+
+  
+# scoring:
+#   method: reconstruction_l1
+#   quantiles: [0.5, 0.75, 0.9, 0.95, 0.99]
+
+
+
+# threshold:
+#   method: single_point
+#   percentile: 95 # 
+#   decision_rule: any 
+
+# output:
+#   dir: results/exp
+
+
+
+# # decision rules for multi-point thresholding:
+# # - any: if any of the scores exceed the threshold, classify as anomaly
+# # - all: if all scores exceed the threshold, classify as anomaly
+# # - majority: if more than half of the scores exceed the threshold, classify as anomaly
