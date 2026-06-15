@@ -1,5 +1,5 @@
 import argparse
-from utils import read_config, make_run_dir, resolve_device, save_config_yaml
+from utils import read_config, make_run_dir, save_config_yaml
 import torch
 import json
 
@@ -15,22 +15,14 @@ from modules.evaluation import ranking_metrics, threshold_metrics, prepare_binar
 def main(config_path, suffix):
     config = read_config(config_path)
 
-<<<<<<< HEAD
     # Set up device for GPU training
     device = config.device if torch.cuda.is_available() else "cpu"
-    config.device = device
-=======
-    device = resolve_device(getattr(config, "device", "auto"))
-    config.device = str(device)
->>>>>>> a9607826444189f79401b05d911b8c6e20b06510
     print(f"[+] Using device: {device}")
 
     # loading the data
 
     train_loader, test_loader, train_dataset, test_dataset = load_data(config)
-    for data, labels in train_loader:
-        print(f"[+] Train batch data shape: {data.shape}, labels shape: {labels.shape}")
-        break
+    
     print(f"[+] Train dataset size: {len(train_dataset)}")
     print(f"[+] Test dataset size: {len(test_dataset)}")
 

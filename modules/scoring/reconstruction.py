@@ -57,7 +57,8 @@ def reconstruction_quantile_score(loader, enc, dec, device, quantiles):
     with torch.inference_mode():
         for data, batch_labels in tqdm(loader, desc="Scoring (quantiles)"):
             data = data.to(device, non_blocking=True)
-
+            # DEBUGGING
+            print(f"Data shape: {data.shape}")
             mu, _ = enc(data)
             recon = dec(mu)
 

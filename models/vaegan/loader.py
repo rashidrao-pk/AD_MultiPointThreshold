@@ -40,11 +40,4 @@ def load_model(config, device):
     decoder.load_state_dict(checkpoint['decoder_state_dict'])
     discriminator.load_state_dict(checkpoint['discriminator_state_dict'])
 
-<<<<<<< HEAD
-=======
-    encoder.eval()
-    decoder.eval()
-    discriminator.eval()
-
->>>>>>> a9607826444189f79401b05d911b8c6e20b06510
     return encoder, decoder, discriminator
