@@ -11,13 +11,13 @@ from matplotlib.colors import LinearSegmentedColormap
 import torch
 import torchvision.transforms as transforms
 
-import rclpy
-from rclpy.node import Node
-from rclpy.qos import QoSProfile, ReliabilityPolicy, HistoryPolicy
-from sensor_msgs.msg import Image as CompressedImage
+# import rclpy
+# from rclpy.node import Node
+# from rclpy.qos import QoSProfile, ReliabilityPolicy, HistoryPolicy
+# from sensor_msgs.msg import Image as CompressedImage
 from cv_bridge import CvBridge
 
-from distrimuse_ros2_api.msg import RulexAreaScore, RulexDetectionResult
+# from distrimuse_ros2_api.msg import RulexAreaScore, RulexDetectionResult
 
 import utils as ut
 import utils.scripts.utils_model as utmc
@@ -42,13 +42,6 @@ AREA_DISPLAY_NAMES = {
     "PRight": "Pallet Right",
     "RoboArm": "Robo Arm",
     "ConvBelt": "Conveyor Belt",
-}
-
-AREA_NAME_TO_ENUM = {
-    "RoboArm": RulexAreaScore.AREA_A,
-    "ConvBelt": RulexAreaScore.AREA_B,
-    "PLeft": RulexAreaScore.AREA_C,
-    "PRight": RulexAreaScore.AREA_D,
 }
 
 
@@ -667,10 +660,11 @@ def parse_args():
 
 def main():
     args = parse_args()
-    rclpy.init()
+    # rclpy.init()
     node = LiveRosAnomalyInfer(args)
     try:
-        rclpy.spin(node)
+        pass
+        # rclpy.spin(node)
     except KeyboardInterrupt:
         node.get_logger().info("Stopped by user.")
     finally:
@@ -678,9 +672,9 @@ def main():
             cv2.destroyAllWindows()
         except Exception:
             pass
-        if rclpy.ok():
-            node.destroy_node()
-            rclpy.shutdown()
+        # if rclpy.ok():
+            # node.destroy_node()
+            # rclpy.shutdown()
 
 
 if __name__ == "__main__":

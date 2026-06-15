@@ -1,5 +1,5 @@
 import argparse
-from utils import read_config, make_run_dir, save_config_yaml
+from utils import read_config, make_run_dir, resolve_device, save_config_yaml
 import torch
 import json
 
@@ -15,8 +15,8 @@ from modules.evaluation import ranking_metrics, threshold_metrics, prepare_binar
 def main(config_path, suffix):
     config = read_config(config_path)
 
-    # Set up device for GPU training
-    device = config.device if torch.cuda.is_available() else "cpu"
+    device = resolve_device(getattr(config, "device", "auto"))
+    config.device = str(device)
     print(f"[+] Using device: {device}")
 
     # loading the data
@@ -60,13 +60,15 @@ def main(config_path, suffix):
 
 
 
-    # Evaluation 
+    # C666 Evaluation 
     result = {}
     raw_test_labels = test_labels # to save later
     test_labels = prepare_binary_labels(test_labels, getattr(test_dataset, "class_to_idx", None))
     try:
         metrics = ranking_metrics(test_scores.detach().cpu(), test_labels)
     except:
+        # TODO --> When using quantile-based scoring, the scores are not necessarily --> Good Format,
+        # so we cannot use them directly for ranking metrics, we need to use the binary predictions instead.
         print("[+] Ranking metrics computation using prediction classification.")
         print(prediction.shape, test_labels.shape)
         metrics = ranking_metrics(prediction, test_labels)
