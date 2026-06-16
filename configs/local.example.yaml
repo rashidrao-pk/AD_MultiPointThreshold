@@ -6,7 +6,7 @@ data:
 
   category: PLeft
   img_size: 128
-  batch_size: 64
+  batch_size: 32
   num_workers: 2
   pin_memory: true
 

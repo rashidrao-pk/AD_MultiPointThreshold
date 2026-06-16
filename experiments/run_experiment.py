@@ -32,8 +32,8 @@ def main(config_path, suffix):
         config,
         device
     )
-    print(f"[+] Model loaded successfully")
-    
+    print(f"[+] Model loaded successfully - ({config.model.name})")
+        
 
     # We do not compute reconstructions here, we go directly to scoring
     # as some scoring methods (like latent space distance) do not require reconstructions at all.
