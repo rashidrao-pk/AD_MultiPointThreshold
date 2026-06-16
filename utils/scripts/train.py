@@ -20,7 +20,6 @@ import torch
 from data import load_data
 from utils import read_config, resolve_device, save_config_yaml
 
-
 def _repo_root():
     return Path(__file__).resolve().parents[2]
 

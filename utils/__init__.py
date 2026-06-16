@@ -4,6 +4,7 @@ from .general import (
     load_yaml_dict,
     make_run_dir,
     read_config,
+    resolve_device,
     save_config_yaml,
     validate_existing_paths,
 )
@@ -16,6 +17,7 @@ __all__ = [
     "load_yaml_dict",
     "make_run_dir",
     "read_config",
+    "resolve_device",
     "save_config_yaml",
     "validate_existing_paths",
 ]
