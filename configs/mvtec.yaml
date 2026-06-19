@@ -1,8 +1,8 @@
-device: auto # options: auto, cpu, cuda, mps
+device: cpu # options: auto, cpu, cuda, mps
 
 data:
   name: MVTec
-  dataset_root: "${MVTEC_DATASET_ROOT:-${DATA_ROOT:-data}/MVtec}"
+  dataset_root: "/home/hakimmics/data/raw/mvtec_anomaly_detection"
   category: zipper
   img_size: 128
   batch_size: 16
@@ -12,7 +12,7 @@ data:
 
 model:
   name: vaegan
-  checkpoint_root: "${VAEGAN_ROOT:-models/vaegan}"
+  checkpoint_root: "models/vaegan"
   latent_dim: 64
   pretrained: true # TODO --> should support verification of pretrained models else train from scratch
   recon_loss: BCE
@@ -29,7 +29,7 @@ threshold:
   decision_rule: any 
 
 output:
-  dir: results/exp
+  dir: results/
 
 experiment:
   models:

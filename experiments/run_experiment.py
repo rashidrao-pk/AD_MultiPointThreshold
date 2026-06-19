@@ -1,5 +1,5 @@
 import argparse
-from utils import read_config, make_run_dir, save_config_yaml
+from utils import read_config
 import torch
 import json
 
@@ -8,7 +8,7 @@ from models.vaegan import load_model
 from modules.scoring import score_samples
 from modules.thresholding import fit_threshold
 from modules.evaluation import ranking_metrics, threshold_metrics, prepare_binary_labels
-
+from utils.experiment_saver import save_experiment_run
 
 
 
@@ -81,30 +81,19 @@ def main(config_path, suffix):
 
     # saving results 
 
-    run_dir = make_run_dir(config, suffix)
+    exp_id, run_dir = save_experiment_run(
+        config=config,
+        results=result,
+        train_scores=train_scores,
+        test_scores=test_scores,
+        raw_test_labels=raw_test_labels,
+        binary_test_labels=test_labels,
+        prediction=prediction,
+        suffix=suffix,
+    )
 
-    # save config
-    save_config_yaml(config, run_dir / "config.yaml")
-
-    # save metrics
-    with open(run_dir / "results.json", "w") as f:
-        json.dump(result, f, indent=4)
-
-
-
-    # save tensors
-    torch.save(
-        {
-            "train_scores": train_scores.detach().cpu(),
-            "test_scores": test_scores.detach().cpu(),
-            "raw_test_labels": raw_test_labels.detach().cpu(),
-            "binary_test_labels": test_labels,
-            "prediction": prediction.detach().cpu(),
-        },
-        run_dir / "outputs.pt",
-)
-
-    print(f"[+] Experiment completed. Results saved to: {run_dir}")
+    print(f"[+] Experiment {exp_id} completed.")
+    print(f"[+] Results saved to: {run_dir}")
 
     
 if __name__ == "__main__":

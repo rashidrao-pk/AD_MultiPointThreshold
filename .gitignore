@@ -5,7 +5,7 @@ models/vaegan/AD_Cobots_Synthetic/*
 models/vaegan/AD_Robotics_Hazards/*
 configs/local.yaml
 
-results/exp
+results/experiments/
 
 
 
