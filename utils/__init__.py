@@ -7,6 +7,7 @@ from .general import (
     resolve_device,
     save_config_yaml,
     validate_existing_paths,
+    set_device,
 )
 
 
@@ -20,4 +21,5 @@ __all__ = [
     "resolve_device",
     "save_config_yaml",
     "validate_existing_paths",
+    "set_device"
 ]

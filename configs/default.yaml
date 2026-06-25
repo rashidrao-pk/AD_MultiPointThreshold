@@ -77,7 +77,7 @@ threshold:
   # Options:
   #   single_point
   #   multi_point
-
+ 
   percentile: 95
   # Threshold is computed from normal training scores.
   # Common values:
