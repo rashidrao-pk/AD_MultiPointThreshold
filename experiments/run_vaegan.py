@@ -95,6 +95,8 @@ def main(config_path, suffix, force):
         raw_test_labels=raw_test_labels,
         binary_test_labels=binary_test_labels,
         prediction=prediction,
+        test_dataset=test_dataset,
+        threshold_model=threshold_model,
         suffix=suffix,
     )
 
