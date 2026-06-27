@@ -11,14 +11,12 @@ import yaml
 # Set up device 
 def set_device(config):
     if config.device == "auto":
-        device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        device = torch.device("cuda" if torch.cuda.is_available() else "mps" if torch.backends.mps.is_available() else "cpu")
         config.device = str(device)
     else:
         device = torch.device(config.device)
     print(f"[+] Using device: {device}")
     return device
-
-
 
 
 ENV_PATTERN = re.compile(r"\$\{([^}:]+)(?::-([^}]*))?\}")
