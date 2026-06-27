@@ -22,6 +22,22 @@ def _reparameterize(mu, logvar):
     return mu + torch.randn_like(std) * std
 
 
+def _latent_distance_sq(mu, center):
+    """Return squared latent distance from each sample to the center."""
+    return torch.sum((mu - center.view(1, -1)) ** 2, dim=1)
+
+
+def _svdd_loss(distances_sq, radius=0.0, nu=0.1):
+    """Compute compact or soft-boundary SVDD loss from squared distances."""
+    radius = float(radius)
+    nu = max(float(nu), 1e-6)
+    if radius <= 0.0:
+        return torch.mean(distances_sq)
+
+    radius_sq = radius ** 2
+    return radius_sq + torch.mean(torch.relu(distances_sq - radius_sq)) / nu
+
+
 def train_one_epoch(
     encoder,
     decoder,
@@ -32,6 +48,11 @@ def train_one_epoch(
     device,
     beta_kl=1e-4,
     beta_gan=1e-4,
+    beta_center=0.0,
+    beta_svdd=0.0,
+    latent_center=None,
+    svdd_radius=0.0,
+    svdd_nu=0.1,
 ):
     """Train encoder, decoder, and discriminator for one epoch."""
     encoder.train()
@@ -44,8 +65,12 @@ def train_one_epoch(
         "recon_loss": 0.0,
         "kl_loss": 0.0,
         "gan_loss": 0.0,
+        "center_loss": 0.0,
+        "svdd_loss": 0.0,
         "beta_kl_loss": 0.0,
         "beta_gan_loss": 0.0,
+        "beta_center_loss": 0.0,
+        "beta_svdd_loss": 0.0,
         "vae_loss": 0.0,
         "disc_loss": 0.0,
     }
@@ -65,7 +90,21 @@ def train_one_epoch(
         kl_loss = -0.5 * torch.mean(1 + logvar - mu.pow(2) - logvar.exp())
         fake_logits_for_gen = discriminator(recon)
         gan_loss = adversarial_loss_fn(fake_logits_for_gen, torch.ones_like(fake_logits_for_gen))
-        vae_loss = recon_loss + beta_kl * kl_loss + beta_gan * gan_loss
+
+        center_loss = torch.zeros((), device=device)
+        svdd_loss = torch.zeros((), device=device)
+        if latent_center is not None and (beta_center > 0.0 or beta_svdd > 0.0):
+            distances_sq = _latent_distance_sq(mu, latent_center)
+            center_loss = torch.mean(distances_sq)
+            svdd_loss = _svdd_loss(distances_sq, radius=svdd_radius, nu=svdd_nu)
+
+        vae_loss = (
+            recon_loss
+            + beta_kl * kl_loss
+            + beta_gan * gan_loss
+            + beta_center * center_loss
+            + beta_svdd * svdd_loss
+        )
         vae_loss.backward()
         optimizer_enc_dec.step()
 
@@ -88,8 +127,12 @@ def train_one_epoch(
         totals["recon_loss"] += recon_loss.item()
         totals["kl_loss"] += kl_loss.item()
         totals["gan_loss"] += gan_loss.item()
+        totals["center_loss"] += center_loss.item()
+        totals["svdd_loss"] += svdd_loss.item()
         totals["beta_kl_loss"] += beta_kl * kl_loss.item()
         totals["beta_gan_loss"] += beta_gan * gan_loss.item()
+        totals["beta_center_loss"] += beta_center * center_loss.item()
+        totals["beta_svdd_loss"] += beta_svdd * svdd_loss.item()
         totals["vae_loss"] += vae_loss.item()
         totals["disc_loss"] += disc_loss.item()
 
@@ -141,6 +184,10 @@ def train_model(
     lr_dis = float(_cfg_get(training_cfg, "learning_rate_dis", 1e-4))
     beta_kl = float(_cfg_get(training_cfg, "beta_kl", 1e-4))
     beta_gan = float(_cfg_get(training_cfg, "beta_gan", 1e-4))
+    beta_center = float(_cfg_get(training_cfg, "beta_center", 0.0))
+    beta_svdd = float(_cfg_get(training_cfg, "beta_svdd", 0.0))
+    svdd_radius = float(_cfg_get(training_cfg, "svdd_radius", 0.0))
+    svdd_nu = float(_cfg_get(training_cfg, "svdd_nu", 0.1))
     save_every = int(_cfg_get(training_cfg, "save_every", 1))
     latent_dim = int(_cfg_get(model_cfg, "latent_dim", 64))
 
@@ -150,6 +197,7 @@ def train_model(
     encoder = Encoder(z_size=latent_dim).to(device)
     decoder = Decoder(z_size=latent_dim).to(device)
     discriminator = Discriminator().to(device)
+    latent_center = torch.zeros(latent_dim, device=device)
     optimizer_enc_dec = optim.Adam(list(encoder.parameters()) + list(decoder.parameters()), lr=lr_enc_dec)
     optimizer_dis = optim.Adam(discriminator.parameters(), lr=lr_dis)
 
@@ -172,6 +220,11 @@ def train_model(
             device,
             beta_kl=beta_kl,
             beta_gan=beta_gan,
+            beta_center=beta_center,
+            beta_svdd=beta_svdd,
+            latent_center=latent_center,
+            svdd_radius=svdd_radius,
+            svdd_nu=svdd_nu,
         )
         val_metrics = validate(encoder, decoder, val_loader, device)
         epoch_metrics = {"epoch": epoch, **train_metrics, **val_metrics}
@@ -226,12 +279,17 @@ def train_model(
                 notes=f"Best {model_label} checkpoint by validation reconstruction loss.",
             )
 
-        print(
+        message = (
             f"epoch={epoch:04d} "
             f"recon={epoch_metrics['recon_loss']:.6f} "
             f"val_recon={epoch_metrics['val_recon_loss']:.6f} "
             f"disc={epoch_metrics['disc_loss']:.6f}"
         )
+        if beta_center > 0.0:
+            message += f" center={epoch_metrics['center_loss']:.6f}"
+        if beta_svdd > 0.0:
+            message += f" svdd={epoch_metrics['svdd_loss']:.6f}"
+        print(message)
 
     return {
         "encoder": encoder,
