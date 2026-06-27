@@ -612,10 +612,21 @@
             name: label,
           }));
         Plotly.react(plotlyPanel, traces, {
-          margin: { l: 50, r: 20, t: 18, b: 42 },
+          margin: { l: 50, r: 150, t: 24, b: 42 },
           xaxis: { title: "Epoch" },
           yaxis: { title: "Loss" },
-          legend: { orientation: "h" },
+          showlegend: true,
+          legend: {
+            title: { text: "Losses" },
+            orientation: "v",
+            x: 1.02,
+            xanchor: "left",
+            y: 1,
+            yanchor: "top",
+            bgcolor: "rgba(255,255,255,0.88)",
+            bordercolor: "rgba(0,0,0,0.18)",
+            borderwidth: 1,
+          },
         }, { responsive: true, displaylogo: false });
       }
 
