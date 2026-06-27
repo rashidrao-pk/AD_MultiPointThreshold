@@ -1,10 +1,5 @@
 from pathlib import Path
 
-import matplotlib
-
-matplotlib.use("Agg")
-
-import matplotlib.pyplot as plt
 import pandas as pd
 import torch
 import torch.nn as nn
@@ -25,68 +20,6 @@ def _reparameterize(mu, logvar):
     """Sample latent vectors using the VAE reparameterization trick."""
     std = torch.exp(0.5 * logvar)
     return mu + torch.randn_like(std) * std
-
-
-def _to_image(tensor):
-    """Convert a normalized CHW tensor into an HWC image array."""
-    return ((tensor.detach().cpu().clamp(-1, 1) + 1) / 2).permute(1, 2, 0).numpy()
-
-
-def _plot_history(loss_history, output_path):
-    """Save training and validation loss curves to an image file."""
-    if not loss_history:
-        return
-
-    output_path = Path(output_path)
-    output_path.parent.mkdir(parents=True, exist_ok=True)
-    history = pd.DataFrame(loss_history)
-
-    fig, axes = plt.subplots(2, 2, figsize=(14, 8), constrained_layout=True)
-    for ax, column, title in (
-        (axes[0, 0], "recon_loss", "Reconstruction loss"),
-        (axes[0, 1], "vae_loss", "VAE-GAN generator loss"),
-        (axes[1, 0], "disc_loss", "Discriminator loss"),
-        (axes[1, 1], "val_recon_loss", "Validation reconstruction loss"),
-    ):
-        if column in history:
-            ax.plot(history.index + 1, history[column], linewidth=1.3)
-            ax.set_title(title)
-            ax.set_xlabel("Epoch")
-            ax.grid(True, alpha=0.25)
-        else:
-            ax.set_axis_off()
-
-    fig.savefig(output_path, dpi=160)
-    plt.close(fig)
-
-
-def _save_reconstruction_preview(encoder, decoder, loader, device, output_path, max_images=6):
-    """Save a side-by-side preview of input and reconstructed images."""
-    output_path = Path(output_path)
-    output_path.parent.mkdir(parents=True, exist_ok=True)
-
-    encoder.eval()
-    decoder.eval()
-    images, _ = next(iter(loader))
-    images = images[:max_images].to(device)
-
-    with torch.inference_mode():
-        mu, _ = encoder(images)
-        recon = decoder(mu)
-
-    fig, axes = plt.subplots(2, len(images), figsize=(2.4 * len(images), 4.8), constrained_layout=True)
-    if len(images) == 1:
-        axes = axes.reshape(2, 1)
-    for idx in range(len(images)):
-        axes[0, idx].imshow(_to_image(images[idx]))
-        axes[0, idx].set_title("input", fontsize=8)
-        axes[0, idx].axis("off")
-        axes[1, idx].imshow(_to_image(recon[idx]))
-        axes[1, idx].set_title("recon", fontsize=8)
-        axes[1, idx].axis("off")
-
-    fig.savefig(output_path, dpi=160)
-    plt.close(fig)
 
 
 def train_one_epoch(
@@ -186,7 +119,16 @@ def validate(encoder, decoder, val_loader, device):
     return {"val_recon_loss": total / max(n_batches, 1)}
 
 
-def train_model(config, train_loader, val_loader, train_dataset, val_dataset, run_dir, device):
+def train_model(
+    config,
+    train_loader,
+    val_loader,
+    train_dataset,
+    val_dataset,
+    run_dir,
+    device,
+    training_plotter=None,
+):
     """Train a VAE-GAN model and save checkpoints, curves, and previews."""
     training_cfg = _cfg_get(config, "training", None)
     model_cfg = config.model
@@ -236,8 +178,18 @@ def train_model(config, train_loader, val_loader, train_dataset, val_dataset, ru
         loss_history.append(epoch_metrics)
 
         pd.DataFrame(loss_history).to_csv(run_dir / "loss_history.csv", index=False)
-        _plot_history(loss_history, run_dir / "training_curves.png")
-        _save_reconstruction_preview(encoder, decoder, val_loader, device, run_dir / "reconstruction_preview.png")
+        if training_plotter is not None:
+            training_plotter.on_epoch_end(
+                epoch=epoch,
+                total_epochs=epochs,
+                loss_history=loss_history,
+                encoder=encoder,
+                decoder=decoder,
+                discriminator=discriminator,
+                train_loader=train_loader,
+                val_loader=val_loader,
+                device=device,
+            )
 
         if epoch % save_every == 0 or epoch == epochs:
             save_checkpoint(

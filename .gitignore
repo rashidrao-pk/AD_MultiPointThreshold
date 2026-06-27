@@ -9,7 +9,7 @@ models/vaegan/AD_Robotics_Hazards/*
 configs/local.yaml
 
 results/experiments/
-
+results/runs/
 
 
 

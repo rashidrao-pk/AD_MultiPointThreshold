@@ -29,6 +29,7 @@ def get_dataloaders_mvtec(cfg):
         shuffle=True,
         num_workers=cfg.num_workers,
         pin_memory=getattr(cfg, "pin_memory", False),
+        drop_last=getattr(cfg, "drop_last", False),
     )
 
     test_loader = DataLoader(

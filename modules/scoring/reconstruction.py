@@ -63,7 +63,7 @@ def reconstruction_quantile_score(loader, enc, dec, device, quantiles):
         for data, batch_labels in tqdm(loader, desc="Scoring (quantiles)"):
             data = data.to(device, non_blocking=True)
             # DEBUGGING
-            print(f"Data shape: {data.shape}")
+            # print(f"Data shape: {data.shape}")
             mu, _ = enc(data)
             recon = dec(mu)
 

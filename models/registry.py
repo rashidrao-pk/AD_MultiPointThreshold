@@ -7,13 +7,13 @@ MODEL_ALIASES = {
     "advis_vaegan": "advis_vaegan",
     "advis_vae_gan": "advis_vaegan",
     "advis-vae-gan": "advis_vaegan",
+    "vae_gan": "advis_vaegan",
+    "vaegan": "advis_vaegan",
+    "vae-gan": "advis_vaegan",
     "simple": "simple_vaegan",
     "simple_vaegan": "simple_vaegan",
     "simple_vae_gan": "simple_vaegan",
     "simple-vae-gan": "simple_vaegan",
-    "vae_gan": "simple_vaegan",
-    "vaegan": "simple_vaegan",
-    "vae-gan": "simple_vaegan",
 }
 
 
@@ -22,11 +22,13 @@ MODEL_INFO = {
         "display_name": "ADVIS VAE-GAN",
         "description": "ADVIS/DistriMuSe-compatible VAE-GAN setup for comparison with the original repo.",
         "has_pretrained_loader": True,
+        "trainable": True,
     },
     "simple_vaegan": {
         "display_name": "Simple VAE-GAN",
         "description": "Generic VAE-GAN baseline using the shared VAE-GAN trainer.",
         "has_pretrained_loader": False,
+        "trainable": False,
     },
 }
 
@@ -45,6 +47,11 @@ def get_trainer(name):
     if model_name in {"advis_vaegan", "simple_vaegan"}:
         return train_vaegan
     raise ValueError(f"No trainer registered for model: {name}")
+
+
+def list_trainable_models():
+    """Return canonical model names that should run for --model all."""
+    return [name for name, info in MODEL_INFO.items() if info.get("trainable")]
 
 
 def get_checkpoint_loader(name):

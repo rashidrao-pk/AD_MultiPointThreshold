@@ -19,5 +19,5 @@ python -m experiments.run_vaegan --config configs/hazards_mac.yaml --force
 ## PLOT Results:
 
 ```bash
-python scripts/plot_experiment_results.py --run_dir results/experiments/E00004
+python -m modules.plotting.plot_experiment_results --run_dir results/experiments/E00008
 ```

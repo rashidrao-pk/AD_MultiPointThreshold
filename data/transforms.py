@@ -21,6 +21,32 @@ def build_transforms(img_size, augmentation="none"):
                 ),
             ]
         )
+    elif augmentation == "cad_custom":
+        train_ops.extend(
+            [
+                transforms.RandomAffine(
+                    degrees=0.01,
+                    translate=(0.01, 0.01),
+                    shear=0.1,
+                    scale=(0.99, 1.0),
+                    fill=(0, 0, 0),
+                ),
+                transforms.ColorJitter(brightness=0.2, contrast=0.2),
+            ]
+        )
+    elif augmentation in {"cad_max", "strong"}:
+        train_ops.extend(
+            [
+                transforms.RandomAffine(
+                    degrees=5,
+                    translate=(0.05, 0.05),
+                    shear=5,
+                    scale=(0.95, 1.0),
+                    fill=(0, 0, 0),
+                ),
+                transforms.ColorJitter(brightness=0.2, contrast=0.2),
+            ]
+        )
     elif augmentation not in {"none", "false", "0", "min"}:
         raise ValueError(f"Unsupported augmentation: {augmentation}")
 

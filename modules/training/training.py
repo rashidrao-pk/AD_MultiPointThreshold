@@ -14,6 +14,7 @@ Model-specific loss math lives in models/<model>/trainer.py.
 """
 
 import argparse
+import copy
 import csv
 import hashlib
 import json
@@ -229,7 +230,11 @@ def parse_args():
     """Parse command-line arguments for the training entry point."""
     parser = argparse.ArgumentParser(description="Train anomaly-detection models from a config file.")
     parser.add_argument("--config", required=True, help="Path to YAML config.")
-    parser.add_argument("--model", default=None, help="Override config.model.name.")
+    parser.add_argument(
+        "--model",
+        default=None,
+        help="Override config.model.name. Use 'all' to train every registered trainable model.",
+    )
     parser.add_argument("--epochs", type=int, default=None, help="Override training.epochs.")
     parser.add_argument("--device", default=None, help="Override config.device.")
     parser.add_argument("--suffix", default="", help="Optional run-directory suffix.")
@@ -248,7 +253,7 @@ def parse_args():
         "--plot_every",
         type=int,
         default=10,
-        help="Save training curves every N epochs when --plot_curves is selected.",
+        help="Save selected training plots every N epochs.",
     )
     parser.add_argument(
         "--plot_latent_space",
@@ -256,16 +261,33 @@ def parse_args():
         help="Save latent-space plots during training.",
     )
     parser.add_argument(
-        "--plot_latent_every",
-        type=int,
-        default=1,
-        help="Save latent-space plots every N epochs when --plot_latent_space is selected.",
+        "--plot_score_distribution",
+        action="store_true",
+        help="Save reconstruction-score distribution plots during training.",
+    )
+    parser.add_argument(
+        "--latent_space_classes",
+        choices=["normal", "both"],
+        default="normal",
+        help="Choose whether latent-space plots use normal training data only or both validation/test classes.",
+    )
+    parser.add_argument(
+        "--latent_projection",
+        choices=["tsne", "pca"],
+        default="tsne",
+        help="Projection method for latent-space plots.",
     )
     parser.add_argument(
         "--latent_plot_batches",
         type=int,
         default=8,
-        help="Maximum validation batches to encode for each latent-space plot.",
+        help="Maximum batches to encode for each latent-space plot.",
+    )
+    parser.add_argument(
+        "--score_plot_batches",
+        type=int,
+        default=8,
+        help="Maximum train/validation batches to score for each score-distribution plot.",
     )
     parser.add_argument("--dry_run", action="store_true", help="Load data and create run dir, then stop.")
     return parser.parse_args()
@@ -279,15 +301,26 @@ def dispatch_trainer(config):
     return get_trainer(config.model.name)
 
 
-def main():
-    """Run the shared training workflow."""
-    args = parse_args()
-    project_root = _repo_root()
-    config_path = _resolve_config_path(args.config, project_root)
+def _selected_model_names(config, model_arg):
+    """Return canonical model names selected by the command-line arguments."""
+    from models import list_trainable_models, normalize_model_name
 
-    config = read_config(config_path)
-    if args.model is not None:
-        _namespace_set(config.model, "name", args.model)
+    if model_arg is None:
+        return [normalize_model_name(config.model.name)]
+
+    if str(model_arg).lower() == "all":
+        model_names = list_trainable_models()
+        if not model_names:
+            raise ValueError("No trainable models are registered.")
+        return model_names
+
+    return [normalize_model_name(model_arg)]
+
+
+def _run_training_for_model(args, project_root, config_path, base_config, model_name):
+    """Run the shared workflow for one concrete model name."""
+    config = copy.deepcopy(base_config)
+    _namespace_set(config.model, "name", model_name)
     if args.device is not None:
         _namespace_set(config, "device", args.device)
     if args.epochs is not None:
@@ -309,7 +342,7 @@ def main():
     checkpoint_info = _read_checkpoint_info(checkpoint_path)
     if checkpoint_info is not None and not args.force:
         _print_existing_checkpoint(config, checkpoint_info)
-        return
+        return None
 
     runs_csv_path = Path(config.output.dir) / TRAIN_RUNS_CSV
     run_hash = _training_signature(config, config_path, args.suffix)
@@ -333,24 +366,30 @@ def main():
 
     if args.dry_run:
         print("[dry_run] stopping before trainer dispatch")
-        return
+        return None
 
     training_plotter = None
-    if args.plot_curves or args.plot_latent_space:
+    if args.plot_curves or args.plot_latent_space or args.plot_score_distribution:
         from modules.plotting import TrainingPlotter
 
         training_plotter = TrainingPlotter(
             run_dir=run_dir,
             plot_curves=args.plot_curves,
             plot_latent_space=args.plot_latent_space,
+            plot_score_distribution=args.plot_score_distribution,
+            latent_space_classes=args.latent_space_classes,
+            latent_projection=args.latent_projection,
             plot_every=args.plot_every,
-            plot_latent_every=args.plot_latent_every,
             max_latent_batches=args.latent_plot_batches,
+            max_score_batches=args.score_plot_batches,
         )
         print(
             "[plots] "
             f"curves={args.plot_curves} every={args.plot_every} "
-            f"latent={args.plot_latent_space} latent_every={args.plot_latent_every}"
+            f"latent={args.plot_latent_space} "
+            f"latent_classes={args.latent_space_classes} "
+            f"latent_projection={args.latent_projection} "
+            f"score_distribution={args.plot_score_distribution}"
         )
 
     result = trainer(
@@ -391,6 +430,21 @@ def main():
     print(f"[done] run_dir={result['run_dir']}")
     print(f"[done] published_checkpoint={published_checkpoint}")
     print(f"[done] best_val_loss={result['best_val_loss']:.6f}")
+    return result
+
+
+def main():
+    """Run the shared training workflow."""
+    args = parse_args()
+    project_root = _repo_root()
+    config_path = _resolve_config_path(args.config, project_root)
+
+    base_config = read_config(config_path)
+    model_names = _selected_model_names(base_config, args.model)
+    print(f"[models] selected={', '.join(model_names)}")
+
+    for model_name in model_names:
+        _run_training_for_model(args, project_root, config_path, base_config, model_name)
 
 
 if __name__ == "__main__":
