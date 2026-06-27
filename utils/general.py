@@ -10,6 +10,8 @@ import yaml
 
 # Set up device 
 def set_device(config):
+    print(f"[+] Requested device: {config}")
+
     if config.device == "auto":
         device = torch.device("cuda" if torch.cuda.is_available() else "mps" if torch.backends.mps.is_available() else "cpu")
         config.device = str(device)
@@ -60,7 +62,7 @@ def expand_env_value(value):
 def load_yaml_dict(path):
     path = Path(path)
     if not path.exists():
-        return {}
+        raise FileNotFoundError(f"Config file not found: {path}")
 
     with open(path, "r", encoding="utf-8") as f:
         return yaml.safe_load(f) or {}

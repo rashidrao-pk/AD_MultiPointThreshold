@@ -10,7 +10,8 @@ readme = "README.MD"
 requires-python = ">=3.9,<3.14"
 license = { file = "LICENSE" }
 authors = [
-  { name = "Muhammad Rashid", "Hakim Ziani" }
+  { name = "Muhammad Rashid" },
+  { name = "Hakim Ziani" }
 ]
 keywords = [
   "anomaly-detection",
@@ -64,6 +65,7 @@ Issues = "https://github.com/rashidrao-pk/AD_MultiPointThreshold/issues"
 [project.scripts]
 ad-model-loader = "utils.scripts.model_loader:main"
 ad-train = "utils.scripts.train:main"
+ad-run-vaegan = "experiments.run_vaegan:cli"
 ad-calibrate-threshold = "utils.scripts.calibrate_threshold:main"
 ad-live-inference = "utils.scripts.inference:main"
 
