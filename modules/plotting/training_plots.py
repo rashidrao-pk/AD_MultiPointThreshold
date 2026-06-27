@@ -14,6 +14,8 @@ import pandas as pd
 from scipy.spatial import ConvexHull, QhullError
 import torch
 
+from .training_quality_plots import save_quality_diagnostics
+
 
 def _to_image(tensor):
     """Convert a normalized CHW tensor into an HWC image array."""
@@ -707,6 +709,7 @@ class TrainingPlotter:
         plot_curves=False,
         plot_latent_space=False,
         plot_score_distribution=False,
+        plot_quality=False,
         latent_space_classes="normal",
         latent_projection="tsne",
         plot_every=10,
@@ -718,6 +721,7 @@ class TrainingPlotter:
         self.plot_curves = plot_curves
         self.plot_latent_space = plot_latent_space
         self.plot_score_distribution = plot_score_distribution
+        self.plot_quality = plot_quality
         self.latent_space_classes = latent_space_classes
         self.latent_projection = latent_projection
         self.plot_every = max(int(plot_every), 1)
@@ -803,5 +807,19 @@ class TrainingPlotter:
                 val_loader,
                 device,
                 self.run_dir / "plots" / "score_distribution" / f"score_distribution_epoch_{epoch:04d}.png",
+                max_batches=self.max_score_batches,
+            )
+
+        if self.plot_quality:
+            save_quality_diagnostics(
+                epoch,
+                loss_history,
+                encoder,
+                decoder,
+                discriminator,
+                train_loader,
+                val_loader,
+                device,
+                self.run_dir,
                 max_batches=self.max_score_batches,
             )

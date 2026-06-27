@@ -22,6 +22,11 @@ PLOT_TYPES = {
     "latent": ("plots/latent_space", "latent_space_epoch_"),
     "evolution": ("plots/training_evolution", "training_evolution_epoch_"),
     "scores": ("plots/score_distribution", "score_distribution_epoch_"),
+    "quality": ("plots/quality_metrics", "quality_metrics_epoch_"),
+    "components": ("plots/score_components", "score_components_epoch_"),
+    "radius": ("plots/latent_radius", "latent_radius_epoch_"),
+    "loss_balance": ("plots/loss_balance", "loss_balance_epoch_"),
+    "validation": ("plots/validation_quality", "validation_quality_epoch_"),
 }
 
 LOSS_HISTORY = "loss_history.csv"

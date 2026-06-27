@@ -351,6 +351,21 @@
           <button type="button" data-tab="scores" aria-selected="false">
             Score Distribution
           </button>
+          <button type="button" data-tab="quality" aria-selected="false">
+            Quality Metrics
+          </button>
+          <button type="button" data-tab="components" aria-selected="false">
+            Score Components
+          </button>
+          <button type="button" data-tab="radius" aria-selected="false">
+            Latent Radius
+          </button>
+          <button type="button" data-tab="loss_balance" aria-selected="false">
+            Loss Balance
+          </button>
+          <button type="button" data-tab="validation" aria-selected="false">
+            Validation Grid
+          </button>
         </nav>
 
         <div class="stage">
@@ -388,6 +403,31 @@
           title: "Score Distribution",
           folder: "plots/score_distribution",
           prefix: "score_distribution_epoch_",
+        },
+        quality: {
+          title: "Quality Metrics",
+          folder: "plots/quality_metrics",
+          prefix: "quality_metrics_epoch_",
+        },
+        components: {
+          title: "Score Components",
+          folder: "plots/score_components",
+          prefix: "score_components_epoch_",
+        },
+        radius: {
+          title: "Latent Radius",
+          folder: "plots/latent_radius",
+          prefix: "latent_radius_epoch_",
+        },
+        loss_balance: {
+          title: "Loss Balance",
+          folder: "plots/loss_balance",
+          prefix: "loss_balance_epoch_",
+        },
+        validation: {
+          title: "Validation Grid",
+          folder: "plots/validation_quality",
+          prefix: "validation_quality_epoch_",
         },
       };
 

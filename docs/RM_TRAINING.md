@@ -69,6 +69,7 @@ python -m modules.training.train --config configs/mvtec_mac.yaml --model vaegan 
   --force \
   --plot_curves \
   --plot_score_distribution \
+  --plot_quality \
   --plot_latent_space \
   --latent_space_classes both \
   --latent_projection pca
@@ -116,7 +117,19 @@ Then train as usual:
 python -m modules.training.train --config configs/mvtec_mac.yaml --model vaegan \
   --force \
   --plot_curves \
+  --plot_quality \
   --plot_score_distribution \
+  --plot_latent_space \
+  --latent_space_classes both \
+  --latent_projection pca
+```
+
+```bash
+python -m modules.training.train --config configs/mvtec_mac.yaml --model vaegan \
+  --force \
+  --plot_curves \
+  --plot_score_distribution \
+  --plot_quality \
   --plot_latent_space \
   --latent_space_classes both \
   --latent_projection pca
