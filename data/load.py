@@ -20,11 +20,13 @@ DATASET_ALIASES = {
 
 
 def _normalize_name(name):
+    """Map dataset aliases to canonical dataset names."""
     key = str(name or "").strip().replace(" ", "_").lower()
     return DATASET_ALIASES.get(key, name)
 
 
 def infer_dataset_from_structure(data_cfg):
+    """Infer the dataset type from the configured root directory layout."""
     root = Path(data_cfg.dataset_root)
     category = getattr(data_cfg, "category", None)
     area = canonicalize_area(category) if category is not None else None
@@ -57,6 +59,7 @@ def infer_dataset_from_structure(data_cfg):
 
 
 def resolve_dataset_name(data_cfg):
+    """Choose the dataset name using config metadata and folder-structure inference."""
     explicit = _normalize_name(getattr(data_cfg, "name", None))
     inferred = infer_dataset_from_structure(data_cfg)
 
@@ -74,6 +77,7 @@ def resolve_dataset_name(data_cfg):
 
 
 def load_data(cfg):
+    """Load train and test data using the dataset loader selected from the config."""
     dataset_name = resolve_dataset_name(cfg.data)
 
     print("[+] Dataset loader selection")

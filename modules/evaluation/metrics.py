@@ -3,6 +3,7 @@ from sklearn.metrics import roc_auc_score, average_precision_score
 
 
 def ranking_metrics(scores, y_true):
+    """Compute ranking metrics from anomaly scores and binary labels."""
     scores = np.asarray(scores)
     y_true = np.asarray(y_true).astype(int)
 
@@ -13,6 +14,7 @@ def ranking_metrics(scores, y_true):
 
 
 def threshold_metrics(y_pred, y_true):
+    """Compute binary classification metrics from threshold predictions."""
     
 
     tp = ((y_pred == 1) & (y_true == 1)).sum()

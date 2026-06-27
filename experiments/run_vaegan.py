@@ -17,6 +17,7 @@ from utils.experiment_saver import (
 
 
 def main(config_path, suffix, force):
+    """Run a full VAE-GAN anomaly detection experiment from a config file."""
     config = read_config(config_path)
 
     should_skip, existing = should_skip_experiment(
@@ -104,7 +105,8 @@ def main(config_path, suffix, force):
     print(f"[+] Results saved to: {run_dir}")
 
 
-if __name__ == "__main__":
+def cli():
+    """Parse command-line arguments and run the VAE-GAN experiment."""
     parser = argparse.ArgumentParser(description="Run anomaly detection experiment.")
 
     parser.add_argument("--config", required=True)
@@ -117,3 +119,7 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
     main(args.config, args.suffix, args.force)
+
+
+if __name__ == "__main__":
+    cli()

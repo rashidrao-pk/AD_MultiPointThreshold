@@ -10,8 +10,8 @@ import yaml
 
 # Set up device 
 def set_device(config):
-    print(f"[+] Requested device: {config}")
-
+    """Resolve and store the torch device requested by the experiment config."""
+    
     if config.device == "auto":
         device = torch.device("cuda" if torch.cuda.is_available() else "mps" if torch.backends.mps.is_available() else "cpu")
         config.device = str(device)
@@ -25,6 +25,7 @@ ENV_PATTERN = re.compile(r"\$\{([^}:]+)(?::-([^}]*))?\}")
 
 
 def deep_merge(base, override):
+    """Recursively merge override values into a copied base dictionary."""
     result = copy.deepcopy(base)
     for key, value in (override or {}).items():
         if (
@@ -38,8 +39,10 @@ def deep_merge(base, override):
 
 
 def expand_env_value(value):
+    """Expand environment variables and user paths in nested config values."""
     if isinstance(value, str):
         def replace(match):
+            """Replace one environment-variable match with its configured value."""
             name, default = match.group(1), match.group(2)
             return os.environ.get(name, default or "")
 
@@ -60,6 +63,7 @@ def expand_env_value(value):
 
 
 def load_yaml_dict(path):
+    """Load a YAML file into a dictionary, returning an empty dict for empty files."""
     path = Path(path)
     if not path.exists():
         raise FileNotFoundError(f"Config file not found: {path}")
@@ -69,6 +73,7 @@ def load_yaml_dict(path):
 
 
 def get_local_config_path(config_path, local_config_path=None):
+    """Return the local override config path for a base config file."""
     if local_config_path:
         return Path(local_config_path)
 
@@ -80,6 +85,7 @@ def get_local_config_path(config_path, local_config_path=None):
 
 
 def validate_existing_paths(cfg_dict):
+    """Raise an error when configured dataset or model paths do not exist."""
     missing = []
 
     data = cfg_dict.get("data", {})
@@ -124,6 +130,7 @@ def validate_existing_paths(cfg_dict):
 import torch
 
 def dict_to_namespace(d):
+    """Convert nested dictionaries and lists into SimpleNamespace objects."""
     if isinstance(d, dict):
         return SimpleNamespace(**{
             k: dict_to_namespace(v) for k, v in d.items()
@@ -133,6 +140,7 @@ def dict_to_namespace(d):
     return d
 
 def read_config(path, local_config_path=None, validate_paths=True):
+    """Load, merge, expand, validate, and namespace an experiment config."""
     cfg_dict = load_yaml_dict(path)
 
     local_path = get_local_config_path(path, local_config_path)
@@ -148,6 +156,7 @@ def read_config(path, local_config_path=None, validate_paths=True):
 
 
 def namespace_to_dict(obj):
+    """Convert nested SimpleNamespace objects back into dictionaries."""
     if hasattr(obj, "__dict__"):
         return {k: namespace_to_dict(v) for k, v in vars(obj).items()}
 
@@ -161,6 +170,7 @@ def namespace_to_dict(obj):
 
 
 def save_config_yaml(config, path):
+    """Save a namespace-style config object as a YAML file."""
     with open(path, "w") as f:
         yaml.safe_dump(
             namespace_to_dict(config),
@@ -171,7 +181,7 @@ def save_config_yaml(config, path):
 
 
 def resolve_device(requested="auto"):
-    """Resolve auto/cuda/mps/cpu into a concrete torch.device."""
+    """Resolve auto, cuda, mps, or cpu into an available torch device."""
     requested = str(requested or "auto").lower()
 
     if requested == "auto":
@@ -194,6 +204,7 @@ def resolve_device(requested="auto"):
     return torch.device(requested)
 
 def make_run_dir(config, suffix=""):
+    """Create and return a timestamped output directory for an experiment run."""
     timestamp = time.strftime("%Y_%m_%d_%H_%M_%S")
 
     dataset_name = config.data.name

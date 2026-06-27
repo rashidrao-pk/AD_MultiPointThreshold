@@ -46,11 +46,13 @@ AREA_DISPLAY_NAMES = {
 
 
 def ordered_area_list(areas):
+    """Return safety areas sorted by the project display order."""
     order_map = {name: i for i, name in enumerate(ALL_SAFETY_AREAS)}
     return sorted(list(areas), key=lambda x: order_map.get(x, 999))
 
 
 def create_union_mask(area_inputs, frame_shape_hw):
+    """Combine all available area masks into one frame-sized binary mask."""
     h, w = frame_shape_hw
     union_mask = np.zeros((h, w), dtype=np.uint8)
 
@@ -67,6 +69,7 @@ def create_union_mask(area_inputs, frame_shape_hw):
 
 
 def overlay_outside_safety_blur(frame_bgr, area_inputs, blur_ksize=31, darken_factor=0.35):
+    """Blur and darken regions outside the configured safety areas."""
     if len(area_inputs) == 0:
         return frame_bgr.copy()
 
@@ -81,6 +84,7 @@ def overlay_outside_safety_blur(frame_bgr, area_inputs, blur_ksize=31, darken_fa
 
 
 def resize_and_center(image, target_w, target_h, bg_color=(0, 0, 0)):
+    """Resize an image to fit inside a target canvas while preserving aspect ratio."""
     if image is None:
         return np.full((target_h, target_w, 3), bg_color, dtype=np.uint8)
 
@@ -102,6 +106,7 @@ def resize_and_center(image, target_w, target_h, bg_color=(0, 0, 0)):
 
 
 def scale_contours(contours, scale, x_off, y_off):
+    """Scale and offset OpenCV contours for display on a resized canvas."""
     scaled = []
     for cnt in contours:
         cnt_scaled = cnt.astype(np.float32).copy()
@@ -112,6 +117,7 @@ def scale_contours(contours, scale, x_off, y_off):
 
 
 def colorize_anomaly_map(dist_map, vmin=0.0, vmax=2.0):
+    """Convert a distance map into a BGR anomaly heatmap."""
     if dist_map is None:
         return None
 
@@ -125,6 +131,7 @@ def colorize_anomaly_map(dist_map, vmin=0.0, vmax=2.0):
 
 
 def unletterbox_patch(patch_bgr, resize_meta):
+    """Remove letterbox padding from a resized model patch."""
     if patch_bgr is None or resize_meta is None:
         return patch_bgr
 
@@ -160,6 +167,7 @@ def paste_area_result_in_full_frame(
     keep_background=False,
     background_canvas=None,
 ):
+    """Paste a processed area patch back into its full-frame masked location."""
     if patch_bgr is None or bbox is None or mask_bin is None:
         return target_canvas
 
@@ -193,6 +201,7 @@ def paste_area_result_in_full_frame(
 
 
 def draw_text_table(panel, results, frame_id=None, corr_frame_id=None, corr_stamp=None):
+    """Draw the safety-area score table into a dashboard panel."""
     panel[:] = (245, 245, 245)
     
     title_y = 35
@@ -257,6 +266,7 @@ def draw_text_table(panel, results, frame_id=None, corr_frame_id=None, corr_stam
 
 
 def build_full_recon_and_anom(frame_bgr, area_inputs):
+    """Compose full-frame reconstruction and anomaly-map views from area patches."""
     recon_full = np.zeros_like(frame_bgr)
     anom_full = np.full_like(frame_bgr, 255)
 
@@ -280,6 +290,7 @@ def build_full_recon_and_anom(frame_bgr, area_inputs):
 
 def draw_dashboard_panel(frame_bgr, area_inputs, latest_results, frame_id=None,
                          width=1600, height=1000, corr_frame_id=None, corr_stamp=None):
+    """Render the four-panel live inference dashboard."""
     canvas = np.full((height, width, 3), 235, dtype=np.uint8)
 
     pad = 16
@@ -292,6 +303,7 @@ def draw_dashboard_panel(frame_bgr, area_inputs, latest_results, frame_id=None,
     br = (2 * pad + panel_w, 2 * pad + panel_h, width - pad, height - pad)
 
     def draw_panel_title(title, box):
+        """Draw a titled border for one dashboard panel."""
         x1, y1, x2, y2 = box
         cv2.putText(canvas, title, (x1 + 12, y1 + 28),
                     cv2.FONT_HERSHEY_SIMPLEX, 0.9, (20, 20, 20), 2, cv2.LINE_AA)
@@ -306,6 +318,7 @@ def draw_dashboard_panel(frame_bgr, area_inputs, latest_results, frame_id=None,
     title_h = 40
 
     def inner_box(box):
+        """Return the content rectangle inside a titled panel box."""
         x1, y1, x2, y2 = box
         return (x1 + inner_margin, y1 + title_h, x2 - inner_margin, y2 - inner_margin)
 
@@ -406,6 +419,7 @@ def draw_dashboard_panel(frame_bgr, area_inputs, latest_results, frame_id=None,
 
 
 def _ensure_gray(mask):
+    """Convert a mask to grayscale when needed."""
     if mask is None:
         return None
     if len(mask.shape) == 3:
@@ -414,6 +428,7 @@ def _ensure_gray(mask):
 
 
 def _prepare_binary_mask(mask, frame_shape_hw):
+    """Resize and threshold a mask to frame size."""
     h, w = frame_shape_hw
     mask = _ensure_gray(mask)
     if mask.shape[:2] != (h, w):
@@ -423,12 +438,14 @@ def _prepare_binary_mask(mask, frame_shape_hw):
 
 
 def _extract_mask_contours(mask_gray, frame_shape_hw):
+    """Extract contours and a binary mask from an input mask."""
     mask_bin = _prepare_binary_mask(mask_gray, frame_shape_hw)
     contours, _ = cv2.findContours(mask_bin, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
     return contours, mask_bin
 
 
 def _crop_with_mask(frame, mask_gray):
+    """Apply a mask and return the cropped masked region and bounding box."""
     mask_bin = _prepare_binary_mask(mask_gray, frame.shape[:2])
     masked_full = cv2.bitwise_and(frame, frame, mask=mask_bin)
 
@@ -445,6 +462,7 @@ def _crop_with_mask(frame, mask_gray):
 
 
 def _resize_128(image, keep_aspect=True, target=(128, 128), return_meta=False):
+    """Resize a patch to the model input size, optionally preserving aspect ratio."""
     target_w, target_h = target
 
     if image is None:
@@ -481,10 +499,12 @@ def _resize_128(image, keep_aspect=True, target=(128, 128), return_meta=False):
 
 
 def tensor_to_hwc_float32(t: torch.Tensor) -> np.ndarray:
+    """Convert a normalized CHW tensor to an HWC float32 image."""
     return (t.detach().cpu().numpy().transpose(1, 2, 0).astype(np.float32) * 0.5 + 0.5)
 
 
 def _compute_distance_offset_np(imgA: np.ndarray, imgB: np.ndarray, offset: int) -> np.ndarray:
+    """Compute per-pixel nearest-neighbor color distance within an offset window."""
     H, W, _ = imgA.shape
     dist = np.full((H, W), np.inf, dtype=np.float32)
     for di in range(-offset, offset + 1):
@@ -506,11 +526,13 @@ def _compute_distance_offset_np(imgA: np.ndarray, imgB: np.ndarray, offset: int)
 
 
 def compute_anomaly_score_pair(imgA, imgB, offset=2, quantile=0.995):
+    """Compute a scalar anomaly score and distance map for an image pair."""
     dist = _compute_distance_offset_np(imgA, imgB, offset)
     return float(np.quantile(dist, quantile)), dist
 
 
 def load_threshold(threshold_dir: str, safety_area: str) -> float:
+    """Load the calibrated threshold for a safety area."""
     json_path = os.path.join(threshold_dir, safety_area, f"threshold_{safety_area}.json")
     if os.path.exists(json_path):
         with open(json_path, encoding="utf-8") as f:
@@ -520,7 +542,9 @@ def load_threshold(threshold_dir: str, safety_area: str) -> float:
 
 
 def build_suffix_for_area(area, args):
+    """Build the model checkpoint suffix used for a safety area."""
     class P:
+        """Minimal namespace used by legacy path-building helpers."""
         pass
 
     params = P()
@@ -604,6 +628,7 @@ load_models = load_models_for_areas
 
 
 def parse_args():
+    """Parse command-line arguments for live anomaly inference."""
     p = argparse.ArgumentParser("Live ROS anomaly inference v5")
 
     p.add_argument("--camera_topic", default="/camera/back_view/image_raw")
@@ -659,6 +684,7 @@ def parse_args():
 
 
 def main():
+    """Initialize and run the live anomaly inference node."""
     args = parse_args()
     # rclpy.init()
     node = LiveRosAnomalyInfer(args)

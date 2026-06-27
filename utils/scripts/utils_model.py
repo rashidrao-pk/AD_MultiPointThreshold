@@ -38,6 +38,7 @@ device = resolve_device('auto')
 ############################################################################
 ########################################################
 def get_anomaly_score(recon_batch, data_batch):
+    """Compute a max-over-spatial anomaly score from reconstruction error."""
     # Keep tensors on the device they already use. This avoids accidental CUDA moves on Mac/CPU.
     local_device = recon_batch.device if hasattr(recon_batch, 'device') else device
     data_batch = data_batch.to(local_device)
@@ -51,11 +52,13 @@ def get_anomaly_score(recon_batch, data_batch):
 ############################################################################
 # Reparameterization trick
 def reparameterize(mu, logvar):
+    """Sample latent vectors using the VAE reparameterization trick."""
     std = torch.exp(0.5 * logvar)
     eps = torch.randn_like(std)
     return mu + eps * std
 ############################################################################
 def get_reconstructed(Enc, Dec, data_, device=None):
+    """Run encoder and decoder to reconstruct an input batch."""
     device = device or next(Enc.parameters()).device
     data_ = Variable(data_).to(device)
     mu, logvar = Enc(data_)
@@ -66,6 +69,7 @@ def get_reconstructed(Enc, Dec, data_, device=None):
 
 ############################################################################
 def model_override(model_path, suffix):
+    """Rename an existing model checkpoint to an old-checkpoint filename."""
     model_path_ = os.path.join(model_path, f"model_{suffix}.pt")
     new_model = os.path.join(model_path, f"model_{suffix}_old.pt")
     if os.path.exists(model_path_):
@@ -80,7 +84,10 @@ def model_override(model_path, suffix):
 
 # Encoder
 class Encoder(nn.Module):
+    """Convolutional VAE encoder that maps images to latent parameters."""
+
     def __init__(self, z_size=64):
+        """Initialize convolutional layers and latent projection heads."""
         super(Encoder, self).__init__()
         self.conv_layers = nn.Sequential(
             nn.Conv2d(3, 64, kernel_size=4, stride=2, padding=1),   # 128x128 -> 64x64
@@ -97,6 +104,7 @@ class Encoder(nn.Module):
         self.fc_logvar = nn.Linear(512 * 8 * 8, z_size)
 
     def forward(self, x):
+        """Encode an image batch into latent mean and log-variance tensors."""
         h = self.conv_layers(x)
         mu = self.fc_mu(h)
         logvar = self.fc_logvar(h)
@@ -104,7 +112,10 @@ class Encoder(nn.Module):
 
 # Decoder
 class Decoder(nn.Module):
+    """Transposed-convolutional VAE decoder that reconstructs images."""
+
     def __init__(self, z_size=64):
+        """Initialize latent projection and reconstruction layers."""
         super(Decoder, self).__init__()
         self.fc = nn.Linear(z_size, 512 * 8 * 8)
         self.deconv_layers = nn.Sequential(
@@ -121,13 +132,17 @@ class Decoder(nn.Module):
         )
 
     def forward(self, z):
+        """Decode latent vectors into image tensors."""
         h = self.fc(z)
         h = self.deconv_layers(h)
         return h
 
 # Define the model for blur/fake detection
 class Discriminator(nn.Module):
+    """CNN discriminator that scores real and reconstructed images."""
+
     def __init__(self):
+        """Initialize convolutional and classifier layers."""
         super(Discriminator, self).__init__()
         self.conv_layers = nn.Sequential(
             nn.Conv2d(3, 32, kernel_size=3, stride=1, padding=1),
@@ -152,6 +167,7 @@ class Discriminator(nn.Module):
         )
     
     def forward(self, x):
+        """Return discriminator logits for an image batch."""
         x = self.conv_layers(x)
         x = self.fc_layers(x)
         return x
@@ -215,6 +231,7 @@ import pandas as pd
 import torch
 
 def make_json_safe(obj):
+    """Convert nested objects into JSON-serializable values."""
     if obj is None:
         return None
     if isinstance(obj, (str, int, float, bool)):
@@ -248,6 +265,7 @@ def save_model(
     verbose=False,
     model_variant = 'old',
 ):
+    """Save model weights, optimizer states, training history, and metadata."""
     if model_variant=='old':
         optEncDec_name  =   'optimizer_enc_state_dict'
         optD_name       =   'optimizer_dec_state_dict'
@@ -423,6 +441,7 @@ def save_model(
 def load_model(Enc, Dec, D, optEncDec, optD, path_models, suffix, verbose=False,
                 device='cuda',
                 model_variant = 'new'):
+    """Load model weights, optimizer states, loss history, and metadata."""
     if model_variant=='old':
         optEncDec_name  =   'optimizer_enc_state_dict'
         optD_name       =   'optimizer_dec_state_dict'
@@ -489,6 +508,7 @@ def load_model(Enc, Dec, D, optEncDec, optD, path_models, suffix, verbose=False,
 
 
 def get_loss_functions (verbose=True):
+    """Create reconstruction and adversarial loss functions."""
     reconstruction_loss_fn = nn.MSELoss()  # L2 reconstruction loss
     adversarial_loss_fn = nn.BCEWithLogitsLoss()  # For GAN
     if verbose:
@@ -500,6 +520,7 @@ def get_loss_functions (verbose=True):
 
 
 def get_optimizers (Enc,Dec,Dis,learning_rate_enc_dec=0.001,learning_rate_dis=0.0001, verbose=True):
+    """Create optimizers for the encoder-decoder pair and discriminator."""
     optEncDec = optim.Adam(list(Enc.parameters()) + list(Dec.parameters()), lr=learning_rate_enc_dec)
     optDis = optim.Adam(Dis.parameters(), lr=learning_rate_dis)
     return optEncDec, optDis

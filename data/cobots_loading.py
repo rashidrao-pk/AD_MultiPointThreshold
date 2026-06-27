@@ -25,11 +25,13 @@ AREA_ALIASES = {
 
 
 def canonicalize_area(area):
+    """Map Cobots area aliases to canonical area names."""
     key = str(area).replace("_", "").replace("-", "").replace(" ", "").lower()
     return AREA_ALIASES.get(key, area)
 
 
 def list_images(root):
+    """Return sorted image paths under a directory."""
     root = Path(root)
     if not root.exists():
         return []
@@ -41,7 +43,10 @@ def list_images(root):
 
 
 class CobotsDataset(Dataset):
+    """Dataset wrapper for Cobots image samples and integer labels."""
+
     def __init__(self, samples, transform=None, classes=None, class_to_idx=None):
+        """Store Cobots samples, transforms, labels, and class metadata."""
         self.samples = samples
         self.imgs = samples
         self.targets = [label for _, label in samples]
@@ -50,9 +55,11 @@ class CobotsDataset(Dataset):
         self.class_to_idx = class_to_idx or {name: idx for idx, name in enumerate(self.classes)}
 
     def __len__(self):
+        """Return the number of image samples."""
         return len(self.samples)
 
     def __getitem__(self, idx):
+        """Load one RGB image and its label by index."""
         path, label = self.samples[idx]
 
         image = Image.open(path).convert("RGB")
@@ -64,6 +71,7 @@ class CobotsDataset(Dataset):
 
 
 def get_dataloaders_cobots(cfg):
+    """Build train and test dataloaders for a Cobots safety area."""
     dataset_root = Path(cfg.dataset_root)
     area = canonicalize_area(cfg.category)
 

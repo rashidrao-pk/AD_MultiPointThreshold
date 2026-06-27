@@ -8,6 +8,7 @@ import torch
 
 
 def _json_safe(value):
+    """Convert nested checkpoint metadata into JSON-serializable values."""
     if value is None or isinstance(value, (str, int, float, bool)):
         return value
     if isinstance(value, Path):
@@ -29,6 +30,7 @@ def _json_safe(value):
 
 
 def _loss_history_to_records(loss_history):
+    """Normalize supported loss-history formats to a list of records."""
     if loss_history is None:
         return []
     if isinstance(loss_history, pd.DataFrame):

@@ -3,6 +3,7 @@ from .multi_point import fit_multi_point
 
 
 def fit_threshold(scores, config):
+    """Fit the thresholding strategy selected by the experiment config."""
 
     method = config.threshold.method
 

@@ -6,6 +6,7 @@ from .transforms import build_transforms
 
 
 def get_dataloaders_mvtec(cfg):
+    """Build train and test dataloaders for an MVTec category."""
     root = Path(cfg.dataset_root) / cfg.category
     train_transform, eval_transform = build_transforms(
         cfg.img_size,

@@ -85,6 +85,7 @@ from utils.scripts.utils_model import Encoder, Decoder, Discriminator
 _STOP = False
 
 def _handle_sigint(sig, frame):
+    """Mark calibration to stop after the current safety area."""
     global _STOP
     print("\n[INFO] SIGINT — stopping after current area.")
     _STOP = True
@@ -149,18 +150,27 @@ def score_batch(data_t: torch.Tensor, recon_t: torch.Tensor,
 # ---------------------------------------------------------------------------
 
 class _SimpleDataset(Dataset):
+    """ImageFolder wrapper exposing common dataset metadata attributes."""
+
     def __init__(self, root: str, transform=None):
+        """Create an ImageFolder-backed dataset."""
         self._ds = datasets.ImageFolder(root=root, transform=transform)
         self.imgs = self._ds.imgs
         self.classes = self._ds.classes
         self.class_to_idx = self._ds.class_to_idx
         self.samples = self._ds.samples
 
-    def __len__(self):  return len(self._ds)
-    def __getitem__(self, i): return self._ds[i]
+    def __len__(self):
+        """Return the number of samples."""
+        return len(self._ds)
+
+    def __getitem__(self, i):
+        """Return one transformed sample by index."""
+        return self._ds[i]
 
 
 def _val_transform():
+    """Create the validation/test transform used during calibration."""
     return transforms.Compose([
         transforms.ToTensor(),
         transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5)),
@@ -169,6 +179,7 @@ def _val_transform():
 
 def load_val_loader(split_json: str, root: str,
                     batch_size: int, num_workers: int) -> tuple:
+    """Load the validation subset described by a split JSON file."""
     base = datasets.ImageFolder(root=root)
     with open(split_json, encoding="utf-8") as f:
         info = json.load(f)
@@ -182,6 +193,7 @@ def load_val_loader(split_json: str, root: str,
 
 def load_test_loader(test_dir: str, batch_size: int,
                      num_workers: int) -> tuple:
+    """Load a labelled test ImageFolder for threshold calibration."""
     ds = _SimpleDataset(test_dir, _val_transform())
     loader = DataLoader(ds, batch_size=batch_size, shuffle=False,
                         num_workers=num_workers, drop_last=False)
@@ -193,6 +205,7 @@ def load_test_loader(test_dir: str, batch_size: int,
 # ---------------------------------------------------------------------------
 
 def load_model_for_area(area: str, params, paths, args, device):
+    """Load trained VAE-GAN models for one safety area."""
     Enc = Encoder(z_size=params.latent_dims).to(device)
     Dec = Decoder(z_size=params.latent_dims).to(device)
     Dis = Discriminator().to(device)
@@ -214,6 +227,7 @@ def load_model_for_area(area: str, params, paths, args, device):
 
 
 def reconstruct(Enc, Dec, data_t: torch.Tensor, device) -> torch.Tensor:
+    """Reconstruct a tensor batch with the encoder and decoder."""
     data_t = data_t.to(device)
     with torch.no_grad():
         mu, logvar = Enc(data_t)
@@ -227,6 +241,7 @@ def reconstruct(Enc, Dec, data_t: torch.Tensor, device) -> torch.Tensor:
 
 def _select_threshold_from_scores(scores: np.ndarray, strategy: str,
                                    percentile: float, n_sigma: float) -> float:
+    """Select a threshold from scores using a configured strategy."""
     if strategy == "max":
         return float(scores.max())
     elif strategy == "percentile":
@@ -319,6 +334,7 @@ def _build_scoring_grid(args) -> list:
                 name = f"OFF-o{offset}-q{quantile}-s{sigma}"
                 # capture loop vars
                 def _fn(d, r, _o=offset, _q=quantile, _s=sigma):
+                    """Score a batch for one captured grid configuration."""
                     return score_batch(d, r, _o, _s, _q)
                 fns.append((name, _fn))
 
@@ -366,6 +382,7 @@ def _compute_threshold_f1c(labels, scores) -> float:
 
 
 def _binormal_auc(tnv, tpv) -> float:
+    """Compute the binormal separation score between TN and TP score groups."""
     if len(tnv) == 0 or len(tpv) == 0:
         return float("nan")
     tn_m, tn_s = np.mean(tnv), np.std(tnv)
@@ -638,6 +655,7 @@ def run_test_mode(area: str, args, device, out_dir: str) -> dict:
 # ---------------------------------------------------------------------------
 
 def _setup_params_paths(area: str, args):
+    """Build legacy params and paths objects for one safety area."""
     params, paths = ut.get_params_paths()
     paths         = ut.get_paths(paths, verbose=False)
     params.subgroup      = area
@@ -666,6 +684,7 @@ def _setup_params_paths(area: str, args):
 
 def _build_summary(area, suffix, n_epochs, args, tau, df_scores,
                    score_csv, mode, **extra) -> dict:
+    """Build the threshold calibration summary payload."""
     s = {
         "safety_area":        area,
         "mode":               mode,
@@ -690,6 +709,7 @@ def _build_summary(area, suffix, n_epochs, args, tau, df_scores,
 
 
 def _save_threshold_json(out_dir: str, area: str, summary: dict):
+    """Write the calibrated threshold summary JSON for one area."""
     area_dir = os.path.join(out_dir, area)
     os.makedirs(area_dir, exist_ok=True)
     json_path = os.path.join(area_dir, f"threshold_{area}.json")
@@ -699,6 +719,7 @@ def _save_threshold_json(out_dir: str, area: str, summary: dict):
 
 
 def _print_summary(s: dict):
+    """Print a compact threshold calibration summary."""
     print('-'*50)
     print(f"\n[result] {'safety_area':<25} {s['safety_area']}")
     print(f"[result] {'mode':<25} {s['mode']}")
@@ -713,6 +734,7 @@ def _print_summary(s: dict):
 # ---------------------------------------------------------------------------
 
 def parse_args():
+    """Parse command-line arguments for threshold calibration."""
     p = argparse.ArgumentParser(
         description="Threshold calibration — val mode or supervised test mode.",
         formatter_class=argparse.RawTextHelpFormatter,
@@ -792,6 +814,7 @@ def parse_args():
 # ---------------------------------------------------------------------------
 
 def main():
+    """Run threshold calibration for one or more safety areas."""
     args   = parse_args()
     device = utmc.resolve_device("auto")
     print(f"[device] {device}  |  mode={args.mode}")

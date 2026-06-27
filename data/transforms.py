@@ -2,7 +2,7 @@ from torchvision import transforms
 
 
 def build_transforms(img_size, augmentation="none"):
-    """Return train/test transforms with normalized 128x128-style tensors."""
+    """Build train and evaluation image transforms for the configured image size."""
     augmentation = str(augmentation or "none").lower()
 
     train_ops = [transforms.Resize((img_size, img_size))]

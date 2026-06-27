@@ -55,6 +55,7 @@ def torch_load_checkpoint(model_path: Path, device: torch.device) -> Dict[str, A
 
 
 def _first_existing_state_dict(checkpoint: Dict[str, Any], keys) -> Optional[Dict[str, torch.Tensor]]:
+    """Return the first checkpoint state dict found under one of the given keys."""
     for key in keys:
         if key in checkpoint and isinstance(checkpoint[key], dict):
             return checkpoint[key]
@@ -70,12 +71,14 @@ def _strip_module_prefix(state_dict: Dict[str, torch.Tensor]) -> Dict[str, torch
 
 
 def count_parameters(model):
+    """Return total and trainable parameter counts for a model."""
     total_params = sum(p.numel() for p in model.parameters())
     trainable_params = sum(p.numel() for p in model.parameters() if p.requires_grad)
     return total_params, trainable_params
 
 
 def get_model_summary(model, model_name="Model"):
+    """Return a printable architecture and parameter-count summary."""
     total_params, trainable_params = count_parameters(model)
     return f"""
 {'='*80}
@@ -91,6 +94,7 @@ Architecture:
 
 
 def instantiate_models(latent_dims: int, device: torch.device) -> Dict[str, torch.nn.Module]:
+    """Instantiate encoder, decoder, and discriminator modules on a device."""
     return {
         "encoder": Encoder(z_size=latent_dims).to(device).eval(),
         "decoder": Decoder(z_size=latent_dims).to(device).eval(),
@@ -139,6 +143,7 @@ def load_all_models(model_path, latent_dims=64, device="auto", strict=True):
 
 
 def list_available_models(checkpoint_dir):
+    """Print and return checkpoints found under a directory."""
     checkpoint_path = Path(checkpoint_dir)
     if not checkpoint_path.exists():
         print(f"Checkpoint directory not found: {checkpoint_dir}")
@@ -159,12 +164,14 @@ def list_available_models(checkpoint_dir):
 
 
 def display_model_details(model_dict):
+    """Print model summaries for loaded model objects."""
     for model_name, model in model_dict.items():
         if model is not None:
             print(get_model_summary(model, model_name=model_name.upper()))
 
 
 def test_model_forward_pass(models_dict, input_shape=(1, 3, 128, 128), device="auto"):
+    """Run a synthetic forward pass through loaded VAE-GAN modules."""
     device = resolve_device(str(device)) if not isinstance(device, torch.device) else device
     x = torch.randn(input_shape, device=device)
     print(f"\nForward pass test on {device}; input shape: {tuple(x.shape)}")
@@ -182,6 +189,7 @@ def test_model_forward_pass(models_dict, input_shape=(1, 3, 128, 128), device="a
 
 
 def get_checkpoint_info(checkpoint_path):
+    """Return basic metadata and key availability for a checkpoint."""
     checkpoint_path = Path(checkpoint_path)
     checkpoint = torch_load_checkpoint(checkpoint_path, torch.device("cpu"))
     if not isinstance(checkpoint, dict):
@@ -199,6 +207,7 @@ def get_checkpoint_info(checkpoint_path):
 
 
 def parse_args():
+    """Parse command-line arguments for model inspection."""
     p = argparse.ArgumentParser(description="Load and inspect trained VAE-GAN models")
     p.add_argument("--list", action="store_true", help="List all checkpoints recursively")
     p.add_argument("--checkpoint", default="models", help="Checkpoint directory")
@@ -214,6 +223,7 @@ def parse_args():
 
 
 def main():
+    """Run the model loader and inspector command."""
     args = parse_args()
     device = resolve_device(args.device)
     print(f"[device] Using: {device}")

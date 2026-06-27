@@ -4,7 +4,10 @@ import torch.nn as nn
 
 # Encoder
 class Encoder(nn.Module):
+    """Convolutional VAE encoder that maps images to latent mean and log-variance."""
+
     def __init__(self, z_size=64):
+        """Initialize convolutional layers and latent projection heads."""
         super(Encoder, self).__init__()
         self.conv_layers = nn.Sequential(
             nn.Conv2d(3, 64, kernel_size=4, stride=2, padding=1),   # 128x128 -> 64x64
@@ -21,6 +24,7 @@ class Encoder(nn.Module):
         self.fc_logvar = nn.Linear(512 * 8 * 8, z_size)
 
     def forward(self, x):
+        """Encode an image batch into latent mean and log-variance tensors."""
         h = self.conv_layers(x)
         mu = self.fc_mu(h)
         logvar = self.fc_logvar(h)
@@ -28,7 +32,10 @@ class Encoder(nn.Module):
 
 # Decoder
 class Decoder(nn.Module):
+    """Transposed-convolutional VAE decoder that maps latent vectors to images."""
+
     def __init__(self, z_size=64):
+        """Initialize latent projection and image reconstruction layers."""
         super(Decoder, self).__init__()
         self.fc = nn.Linear(z_size, 512 * 8 * 8)
         self.deconv_layers = nn.Sequential(
@@ -45,13 +52,17 @@ class Decoder(nn.Module):
         )
 
     def forward(self, z):
+        """Decode latent vectors into reconstructed image tensors."""
         h = self.fc(z)
         h = self.deconv_layers(h)
         return h
 
 # Define the model for blur/fake detection
 class Discriminator(nn.Module):
+    """CNN discriminator that scores images as real or reconstructed."""
+
     def __init__(self):
+        """Initialize convolutional feature extraction and classifier layers."""
         super(Discriminator, self).__init__()
         self.conv_layers = nn.Sequential(
             nn.Conv2d(3, 32, kernel_size=3, stride=1, padding=1),
@@ -76,6 +87,7 @@ class Discriminator(nn.Module):
         )
     
     def forward(self, x):
+        """Return discriminator logits for an image batch."""
         x = self.conv_layers(x)
         x = self.fc_layers(x)
         return x

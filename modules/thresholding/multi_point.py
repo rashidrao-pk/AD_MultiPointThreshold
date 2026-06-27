@@ -3,7 +3,10 @@ from .base import ThresholdModel
 
 
 class MultiPointThreshold(ThresholdModel):
+    """Threshold model that combines multiple quantile-level score decisions."""
+
     def __init__(self, quantiles, thresholds, decision_rule="any"):
+        """Store quantile thresholds and the rule used to combine them."""
         self.quantiles = quantiles
         self.thresholds = thresholds.float().view(-1)
         self.decision_rule = decision_rule

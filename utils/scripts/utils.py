@@ -51,10 +51,12 @@ global device
 
 ##################################################################################
 def get_params_paths():
+    """Legacy utility helper for get params paths."""
     
 
     @dataclass
     class Parameters:
+        """Legacy utility class for Parameters."""
         dummy           : bool  = False
         model_depth     : int   = 3
         latent_dims     : int   = 64
@@ -73,6 +75,7 @@ def get_params_paths():
         
     @dataclass
     class Paths:
+        """Legacy utility class for Paths."""
         dummy           : bool  = False
         path_datasets   : str  =   ''
         dataset_type    : str = ''
@@ -98,9 +101,11 @@ def get_params_paths():
 ##################################################################################
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 def natural_sort_key(filename):
+    """Legacy utility helper for natural sort key."""
     return [int(part) if part.isdigit() else part for part in re.split(r'(\d+)', filename)]
 ##################################################################################
 def get_map_coord():
+    """Legacy utility helper for get map coord."""
     return {'PLeft': (238,58,360, 360) ,
         'RoboArm': (432, 0, 416,403),
         'ConvBelt': (495, 240,300,480),
@@ -313,6 +318,7 @@ def create_video_from_frames(paths,suffix=None,data_type = 'full',video_for='tra
 ##################################################################################
 ##################################################################################
 def get_paths(paths,dataset_type='SR', verbose=False):
+    """Legacy utility helper for get paths."""
     import platform
 
     from utils.general import deep_merge, expand_env_value, load_yaml_dict
@@ -361,11 +367,13 @@ def get_paths(paths,dataset_type='SR', verbose=False):
 class CustomCrop:
     """Custom masking based on subgroup"""
     def __init__(self, subgroup=None,map_coor=None, fill_color=(0, 0, 0)):
+        """Initialize this legacy utility object."""
         self.subgroup = subgroup  # Store subgroup for cropping
         self.fill_color = fill_color  # Color to fill the masked region
         self.map_coor = map_coor
 
     def __call__(self, image):
+        """Apply this callable utility to its input."""
 
         self.map_coor   
         # print(f'self.map_coor[self.subgroup :::: {self.map_coor[self.subgroup]}')
@@ -394,6 +402,7 @@ class CustomCrop:
 class LoadMaskedImage:
     """Apply a mask or crop an image based on the selected subgroup and mask type."""
     def __init__(self,paths=None,target_size=None, subgroup=None, subgroup_mask='box', map_coor=None, fill_color=(0, 0, 0),mask_image_name=6232):
+        """Initialize this legacy utility object."""
         self.paths = paths
         self.subgroup = subgroup  # Subgroup to process
         self.subgroup_mask = subgroup_mask  # 'box' or 'mask'
@@ -428,6 +437,7 @@ class LoadMaskedImage:
         ###################################
         
     def __call__(self, image):
+        """Apply this callable utility to its input."""
         return Image.composite(image.convert("RGB"), Image.new("RGB", image.size, self.fill_color), self.mask)
     # def __call__(self, image):
     #     """Apply a mask or crop to the image."""
@@ -478,6 +488,7 @@ class LoadMaskedImage:
 class MaskedCrop:
     """Custom masking based on subgroup"""
     def __init__(self, subgroup=None,mask=None, fill_color=(0, 0, 0), verbose=False):
+        """Initialize this legacy utility object."""
         self.subgroup = subgroup  # Store subgroup for cropping
         self.fill_color = fill_color  # Color to fill the masked region
         self.mask = mask
@@ -493,6 +504,7 @@ class MaskedCrop:
         self.cropped_mask = np.stack([cropped_mask_1ch]*3, axis=-1)  # Shape: (h, w, 3)
 
     def __call__(self, image):
+        """Apply this callable utility to its input."""
 
         # self.map_coor   
         # print(f'self.map_coor[self.subgroup :::: {self.map_coor[self.subgroup]}')
@@ -510,6 +522,7 @@ class MaskedCrop:
         return image
     
     def uncrop(self, image_np):
+        """Legacy utility helper for uncrop."""
         assert image_np.shape[0] == self.cropped_mask.shape[0] and image_np.shape[1] == self.cropped_mask.shape[1], "Image shape does not match mask shape"
         # reapply the boolean mask to image_np
         image_np = image_np * self.cropped_mask
@@ -525,12 +538,14 @@ class MaskedCrop:
 class CustomDrawRectangle:
     """Draw a rectangle on the image instead of cropping it."""
     def __init__(self, subgroup=None, map_coor=None, outline_color=(255, 0, 0), thickness=8):
+        """Initialize this legacy utility object."""
         self.subgroup = subgroup  # Store subgroup for rectangle placement
         self.map_coor = map_coor  # Coordinates of the rectangle
         self.outline_color = outline_color  # Color of the rectangle outline
         self.thickness = thickness  # Thickness of the rectangle border
 
     def __call__(self, image):
+        """Apply this callable utility to its input."""
         if self.subgroup is None or self.map_coor is None:
             return image
 
@@ -545,7 +560,9 @@ class CustomDrawRectangle:
 ################################################################################################################################
 ################################################################################################################################
 class DatasetWithFilename(datasets.ImageFolder):
+    """Legacy utility class for DatasetWithFilename."""
     def __init__(self, root, transform=None, target_filename=None):
+        """Initialize this legacy utility object."""
         super().__init__(root, transform)
         
         # If a specific filename is given, filter the dataset
@@ -554,6 +571,7 @@ class DatasetWithFilename(datasets.ImageFolder):
             self.samples = self.imgs  # Ensure compatibility with ImageFolder
 
     def __getitem__(self, index):
+        """Return one sample by index."""
         img, label = super().__getitem__(index)
         path = self.imgs[index][0]
         filename = os.path.basename(path)
@@ -569,6 +587,7 @@ def get_data_loaders(paths,params,#  train_dir,test_dir,
                     subgroup=None,
                     num_workers=8, pin_memory=True,persistent_workers=True
                     ):
+    """Legacy utility helper for get data loaders."""
     
     
     if subgroup is None:
@@ -794,6 +813,7 @@ def get_data_loaders_for_contour(paths,params,#  train_dir,test_dir,
                     shuffle=False,
                     pin_memory=True,persistent_workers=True
                     ):
+    """Legacy utility helper for get data loaders for contour."""
 
     ###################################################
     ### Train transform
@@ -856,16 +876,20 @@ def get_data_loaders_for_contour(paths,params,#  train_dir,test_dir,
 # 
 #   
 class CustomImageDataset(Dataset):
+    """Legacy utility class for CustomImageDataset."""
     def __init__(self, root_dir, transform=None):
+        """Initialize this legacy utility object."""
         self.root_dir = root_dir
         self.transform = transform
         self.image_files = [f for f in os.listdir(root_dir) 
                           if os.path.isfile(os.path.join(root_dir, f))]
         
     def __len__(self):
+        """Return the number of available samples."""
         return len(self.image_files)
     
     def __getitem__(self, idx):
+        """Return one sample by index."""
         img_path = os.path.join(self.root_dir, self.image_files[idx])
         image = Image.open(img_path).convert('RGB')  # Convert to RGB if needed
         
@@ -888,6 +912,7 @@ def get_data_loaders_for_contour_and_gt(paths,params,#  train_dir,test_dir,
                     shuffle=False,
                     pin_memory=True,persistent_workers=True
                     ):
+    """Legacy utility helper for get data loaders for contour and gt."""
     
     ###################################################
     ### Train transform
@@ -964,6 +989,7 @@ def get_data_loaders_from_preprocessed(train_dir_processed_subgroup,
                                        persistent_workers=True,
                                        verbose = False,
                                        ):
+    """Legacy utility helper for get data loaders from preprocessed."""
     if verbose:
         print(f'----  DATA LOADER  ---- with ++ {augmentation_type} ++ Augmentation')
 
@@ -1006,7 +1032,9 @@ def get_data_loaders_from_preprocessed(train_dir_processed_subgroup,
 ##################################################################################################
 ##################################################################################################
 class DatasetWithFilename(datasets.ImageFolder):
+    """Legacy utility class for DatasetWithFilename."""
     def __init__(self, root, transform=None, target_filename=None, keep_folders=None):
+        """Initialize this legacy utility object."""
         super().__init__(root, transform)
         
         keep_folders = set(keep_folders or [])
@@ -1028,6 +1056,7 @@ class DatasetWithFilename(datasets.ImageFolder):
             self.samples = self.imgs
 
     def __getitem__(self, index):
+        """Return one sample by index."""
         img, label = super().__getitem__(index)
         path = self.imgs[index][0]
         filename = os.path.basename(path)
@@ -1052,6 +1081,7 @@ def get_test_loaders_from_processed_data_new(
         pin_memory=False,
         target_filename=None
     ):
+    """Legacy utility helper for get test loaders from processed data new."""
     if keep_folders is None:
         keep_folders = []
 
@@ -1180,6 +1210,7 @@ def get_test_loaders_from_processed_data(paths,params,data_type='test',sel_type=
                      num_workers=1, 
                      verbose = True,
                      pin_memory=False, target_filename=None):
+    """Legacy utility helper for get test loaders from processed data."""
     if subgroup is None:
         subgroup = params.subgroup
 
@@ -1276,6 +1307,7 @@ def get_test_loaders(paths,params,data_type='test',sel_type='auto-mask', target_
                      num_workers=1, 
                      verbose = True,
                      pin_memory=False, target_filename=None):
+    """Legacy utility helper for get test loaders."""
     if subgroup is None:
         subgroup = params.subgroup
 
@@ -1354,6 +1386,7 @@ def get_test_loaders(paths,params,data_type='test',sel_type='auto-mask', target_
 #################################################################################################
 #################################################################################################
 def show_and_save(file_name, real_batch,paths,data_type='tuple',img_count=2, destroy_fig=True,fontsize = 14):
+    """Legacy utility helper for show and save."""
     if data_type=='tuple':
         grid_b = real_batch[0]
     else:
@@ -1389,6 +1422,7 @@ def show_and_save(file_name, real_batch,paths,data_type='tuple',img_count=2, des
 #################################################################################################
 #################################################################################################
 def plot_loss(loss_list):
+    """Legacy utility helper for plot loss."""
     plt.figure(figsize=(10,5))
     plt.title("Loss During Training")
     plt.plot(loss_list,label="Loss")
@@ -1398,6 +1432,7 @@ def plot_loss(loss_list):
     plt.show()
 ############################################################################
 def plot_test_images(test_loader, paths):
+    """Legacy utility helper for plot test images."""
     # Get one batch from the dataloader
     real_batch, labels = next(iter(test_loader))
 
@@ -1428,6 +1463,7 @@ def plot_test_images(test_loader, paths):
 ############################################################################
 
 def get_colormap(mode=1):
+    """Legacy utility helper for get colormap."""
     if mode==1:
     # TUNED Colormap 
         colormap_anomaly_map = \
@@ -1452,6 +1488,7 @@ def plot_test_single(original, reconstructed, epoch, ttl='test', data_type='trai
                      dpi = 150,
                      transparent_fig=True, plot_anomaly_scores=False, save_fig=True, destroy_fig=True, fontsize=12,
                      fontcolor='black', verbose_debug=False):
+    """Legacy utility helper for plot test single."""
     print()
     os.makedirs(save_path,exist_ok=True)
     if plot_anomaly_scores:
@@ -1520,9 +1557,11 @@ def imshow(img, axs=None):
     else:
         axs.imshow(np.transpose(npimg, (1, 2, 0)))
 def img_CHW_HWC(img_tensor):
+    """Legacy utility helper for img CHW HWC."""
     return img_tensor.permute(1, 2, 0)  # (C, H, W) to (H, W, C)
 ############################################################################
 def get_anomaly_score(data_batch,recon_batch):
+    """Legacy utility helper for get anomaly score."""
     assert data_batch.shape == recon_batch.shape, f"Shape mismatch: {recon_batch.shape} vs {data_batch.shape}"
 
     # recon_batch = recon_.cpu().detach().numpy()
@@ -1697,6 +1736,7 @@ def plot_images_tracking(original_random, reconstructed_random,
     
     plt.show()
 def get_header(params,paths, verbose=False):
+    """Legacy utility helper for get header."""
     log_separator_bold = "=" * 160 + "\n"
     log_separator_dash = "-" * 160 + "\n"
     log_messages = ""
@@ -1711,6 +1751,7 @@ def get_header(params,paths, verbose=False):
     return log_code_header_stat,log_code_header_dyn
 ############################################################################
 def create_log_file(params,paths,start_time, verbose=False, read_mode='w'):
+    """Legacy utility helper for create log file."""
     log_messages = ""
     log_separator_dash = "-" * 160 + "\n"
     log_separator_bold = "=" * 160 + "\n"
@@ -1769,6 +1810,7 @@ def create_log_file(params,paths,start_time, verbose=False, read_mode='w'):
     return log_messages
 ############################################################################
 def save_log_file(log_file_full, log_messages,read_mode='a', verbose=True):
+    """Legacy utility helper for save log file."""
     with open(log_file_full, read_mode) as log_file:
         log_file.write(log_messages)
     if verbose:
@@ -1796,6 +1838,7 @@ def save_log_file(log_file_full, log_messages,read_mode='a', verbose=True):
 ############################################################################
 
 def get_status_info(loss_history,params,paths):
+    """Legacy utility helper for get status info."""
     print('Model with Epochs \t-->',len(loss_history))
     print('Component \t\t-->',params.subgroup)
     print('Dataset \t\t-->',paths.dataset_type)
@@ -1805,6 +1848,7 @@ def get_status_info(loss_history,params,paths):
 ############################################################################
 
 def get_initial_paths(paths,params, verbose=True):
+    """Legacy utility helper for get initial paths."""
     paths.path_codes = os.getcwd()
 
     paths.path_codes_local = os.path.join(paths.path_results_local,paths.dataset_type)
@@ -1859,6 +1903,7 @@ def get_initial_paths(paths,params, verbose=True):
 
 ############################################################################
 def get_create_results_path(subgroup,params,args,paths,dir='scripts', save_path_type='local',models_dir = 'models',create_dirs=True, verbose=True):
+    """Legacy utility helper for get create results path."""
     if save_path_type=='local':
         base_dir = paths.path_codes_local
     elif save_path_type=='cloud':
@@ -1909,6 +1954,7 @@ def get_create_results_path(subgroup,params,args,paths,dir='scripts', save_path_
 ############################################################################
 
 def plot_loss_sep(loss_history,params,paths,plot_type=3,save_fig=True, destroy_fig=True,verbose_print=False, plot_long_header=True, fontsize = 12):
+    """Legacy utility helper for plot loss sep."""
     # === Plot losses ===
     if plot_type==3:
         fig, axs = plt.subplots(1, 3, figsize=(12, 5))
@@ -1980,6 +2026,7 @@ def plot_loss_sep(loss_history,params,paths,plot_type=3,save_fig=True, destroy_f
     plt.show()
 ##########################################################################################
 def plot_losses(loss_history,params,paths,kl_usuage=False, save_fig=True, destroy_fig=True,verbose_print=False, plot_long_header=True):
+        """Legacy utility helper for plot losses."""
         if kl_usuage:
             kl_text = f'USING KL loss'
         else:
@@ -2032,6 +2079,7 @@ def plot_losses(loss_history,params,paths,kl_usuage=False, save_fig=True, destro
         plt.show()
 ##########################################################################################
 def plot_img_gt(img,gt,file_n,lbl,groundtruth_classes):
+    """Legacy utility helper for plot img gt."""
     fig,axs = plt.subplots(1,2,figsize=(10,5))
     axs[0].imshow(np.transpose(img.numpy() *0.5 + 0.5,(1,2,0)))
     axs[0].set_title('Test Image')
@@ -2085,6 +2133,7 @@ def get_ssim_full_params(win_size_ls = [1, 3],
                          sigma_ls = [1.0, 1.5, 2.0],
                          aggregation_function_ls = ['max', 'q-99', 'q-999', 'q-9999', 'q-99999']
                          ):
+    """Legacy utility helper for get ssim full params."""
     ssim_params = {}
     
     # offset_ls = [1, 3]
@@ -2115,6 +2164,7 @@ def get_ssim_full_params(win_size_ls = [1, 3],
 
 
 class ComputeDifferences():
+    """Legacy utility class for ComputeDifferences."""
     def __init__(self, data_batch, recon_batch, AS_SIGMA = 1, AS_OFFSET = 1, AS_QUANT = 1.0):
         """
         Initialize the difference computation class.
@@ -2169,6 +2219,7 @@ class ComputeDifferences():
     ####################################################################
     ####################################################################
     def get_ravi_difference(self):
+        """Legacy utility helper for get ravi difference."""
 
         # abs_diff = torch.abs(self.recon_batch - self.data_batch)
         abs_diff = torch.abs(self.data_batch - self.recon_batch)  # (B, C, H, W)
@@ -2185,6 +2236,7 @@ class ComputeDifferences():
     ####################################################################
     ####################################################################
     def get_gaussian_difference(self,params=None):
+        """Legacy utility helper for get gaussian difference."""
         if params is not None:
             offset,sigma,quant = params['offset'],params['sigma'],params['quant']
         else:
@@ -2424,6 +2476,7 @@ class ComputeDifferences():
 ################################################################################################################################################
 ################################################################################################################################################
 def get_time(suff='',verbose=True):
+    """Legacy utility helper for get time."""
     if verbose:
         print(f'Exp {suff} time : ',format(datetime.now()))
     return datetime.now()
@@ -2432,6 +2485,7 @@ def get_time(suff='',verbose=True):
 ################################################################################################################################################
 
 def train_pca_on_latent_space(data=None,n_components=2):
+    """Legacy utility helper for train pca on latent space."""
     if data is not None:
         data = data.detach().cpu().numpy()
         pca = PCA(n_components=2)
@@ -2439,6 +2493,7 @@ def train_pca_on_latent_space(data=None,n_components=2):
         data_transformed = pca.transform(data)
         return pca,data_transformed
 def get_data_latent_inspection(dataloader,data_type='full',data_part_type='train', verbose=True):
+    """Legacy utility helper for get data latent inspection."""
     if data_type=='full':
         data_list = []
         lbls_list = []
@@ -2468,6 +2523,7 @@ def get_data_latent_inspection(dataloader,data_type='full',data_part_type='train
     else:
         return data,labels,None
 def get_explore_latent_space(train_loader,Enc,Dec,data_type='full',data_part_type='train', device='cpu'):
+    """Legacy utility helper for get explore latent space."""
     if device=='cpu':
         Enc = Enc.cpu()
         Dec = Dec.cpu()
@@ -2558,6 +2614,7 @@ def get_explore_latent_space_batched(
     # Helper to extract mu and labels
     # ------------------------------------------------------------
     def _extract_mu_and_labels(batch):
+        """Legacy utility helper for extract mu and labels."""
         if isinstance(batch, (list, tuple)):
             x = batch[0]
             y = batch[1] if len(batch) > 1 else None
@@ -2702,6 +2759,7 @@ def get_explore_latent_space_batched(
 #---------------------------------------------------------------------------------------------------
 
 def plot_latent(latent_space=None, latent_space_test=None, labels_train=None, labels_test=None, labels=['train','test'],paths=None, normal_class_name='normal', ttl=''):
+    """Legacy utility helper for plot latent."""
     classes = np.unique(np.concatenate((labels_train, labels_test)))  # Get all unique classes
     plt.figure(figsize=(8, 6))
 
@@ -2754,6 +2812,7 @@ def plot_latent_3d(latent_space_train=None,
                    ttl = '',
                    labels=['train','Val'],
                    normal_class_name='normal'):
+    """Legacy utility helper for plot latent 3d."""
 
     fig = plt.figure(figsize=(10, 7))
     ax = fig.add_subplot(111, projection='3d')
@@ -2816,6 +2875,7 @@ def plot_latent_3d_plotly_custom(
         labels=['train','Val'],
         title="Latent Space (Train + Test)"
     ):
+    """Legacy utility helper for plot latent 3d plotly custom."""
 
     fig = go.Figure()
 
@@ -2883,6 +2943,7 @@ def plot_latent_3d_plotly_custom(
 
 #==========================================================================
 def plot_latent_surface(latent_space, labels):
+    """Legacy utility helper for plot latent surface."""
     # labels = labels.detach().cpu().numpy()
     fig = plt.figure(figsize=(10, 7))
     ax = fig.add_subplot(111, projection='3d')
@@ -2927,6 +2988,7 @@ def get_l1_difference(real_images,recon_batch,supress_output=False):
 ################################################################################################################################################
 
 def get_anomaly_score_ravi(real_images, reconstructed_images, quantile=1.0):
+    """Legacy utility helper for get anomaly score ravi."""
     abs_diffs = torch.abs(real_images - reconstructed_images)
     mean_diffs = abs_diffs.mean(dim=1).cpu().detach().numpy()
     mean_diffs = mean_diffs.reshape(mean_diffs.shape[0], -1)
@@ -2946,6 +3008,7 @@ def get_anomaly_score_ravi(real_images, reconstructed_images, quantile=1.0):
 ########################
 
 def get_contoured_image(image,paths,subgroup,subgroup_mask='mask',mask_image_name = 3015, thickness=2, contour_color=(255, 0, 0), verbose=False):
+    """Legacy utility helper for get contoured image."""
     # print('TEST ---------> ', params.subgroup)
 
 
@@ -2972,6 +3035,7 @@ def get_contoured_image(image,paths,subgroup,subgroup_mask='mask',mask_image_nam
 ##########################################################################################################################################
 ##########################################################################################################################################
 def get_parameters_by_experiment(params, verbose=False):
+    """Legacy utility helper for get parameters by experiment."""
     if params.exp_type =='E1':
         #    SLOW and NOT WORKING
         params.learning_rate_enc_dec    = 0.001  # 
@@ -3015,6 +3079,7 @@ def get_dataset_version(paths,params,
                         dataset_version='V6',dataset_type='fronttop',
                         train_name = 'train',test_name= 'test_processed',
                         subgroup='RoboArm',mask_image_name=3015, verbose=False):
+    """Legacy utility helper for get dataset version."""
 
     paths.dataset_version      = dataset_version #'V6'
     paths.path_datasets        =  os.path.join(paths.path_datasets_main,paths.dataset_version)
@@ -3068,6 +3133,7 @@ def get_dataset_version(paths,params,
 
 ########################################################################################################
 def get_GPU_device(verbose=True):
+    """Legacy utility helper for get GPU device."""
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     
     if verbose:
@@ -3086,7 +3152,9 @@ def get_GPU_device(verbose=True):
 ########################################################################################################
 
 class StreamVideoDataset(Dataset):
+    """Legacy utility class for StreamVideoDataset."""
     def __init__(self, video_path, transform=None):
+        """Initialize this legacy utility object."""
         self.video_path = video_path
         self.transform = transform
 
@@ -3098,9 +3166,11 @@ class StreamVideoDataset(Dataset):
         self.total_frames = int(self.cap.get(cv2.CAP_PROP_FRAME_COUNT))  # Total frames
 
     def __len__(self):
+        """Return the number of available samples."""
         return self.total_frames  # Number of frames in video
 
     def __getitem__(self, idx):
+        """Return one sample by index."""
         self.cap.set(cv2.CAP_PROP_POS_FRAMES, idx)  # Set frame position
         ret, frame = self.cap.read()  # Read frame
 
@@ -3116,10 +3186,13 @@ class StreamVideoDataset(Dataset):
         return frame  # Shape: (C, H, W)
 
     def __del__(self):
+        """Release resources held by this object."""
         self.cap.release()  # Release video capture on deletion
 ##################################################################################
 class StreamVideoDataset(Dataset):
+    """Legacy utility class for StreamVideoDataset."""
     def __init__(self, video_path, transform=None):
+        """Initialize this legacy utility object."""
         self.video_path = video_path
         self.transform = transform
 
@@ -3131,9 +3204,11 @@ class StreamVideoDataset(Dataset):
         cap.release()  # Close it here, and reopen in __getitem__()
 
     def __len__(self):
+        """Return the number of available samples."""
         return self.total_frames
 
     def __getitem__(self, idx):
+        """Return one sample by index."""
         cap = cv2.VideoCapture(self.video_path)  # Open a new instance
         cap.set(cv2.CAP_PROP_POS_FRAMES, idx)
         ret, frame = cap.read()
@@ -3159,6 +3234,7 @@ class StreamVideoDataset(Dataset):
 class MaskedCrop:
     """Custom masking based on subgroup"""
     def __init__(self, subgroup=None,mask=None, fill_color=(0, 0, 0),verbose=False):
+        """Initialize this legacy utility object."""
         self.subgroup = subgroup  # Store subgroup for cropping
         self.fill_color = fill_color  # Color to fill the masked region
         self.mask = mask
@@ -3175,6 +3251,7 @@ class MaskedCrop:
         self.cropped_mask = np.stack([cropped_mask_1ch]*3, axis=-1)  # Shape: (h, w, 3)
 
     def __call__(self, image):
+        """Apply this callable utility to its input."""
 
         # self.map_coor   
         # print(f'self.map_coor[self.subgroup :::: {self.map_coor[self.subgroup]}')
@@ -3192,6 +3269,7 @@ class MaskedCrop:
         return image
     
     def uncrop(self, image_np):
+        """Legacy utility helper for uncrop."""
         assert image_np.shape[0] == self.cropped_mask.shape[0] and image_np.shape[1] == self.cropped_mask.shape[1], "Image shape does not match mask shape"
         # reapply the boolean mask to image_np
         image_np = image_np * self.cropped_mask
@@ -3208,11 +3286,13 @@ class MaskedCrop:
 class CustomCrop:
     """Custom masking based on subgroup"""
     def __init__(self, subgroup=None,map_coor=None, fill_color=(0, 0, 0)):
+        """Initialize this legacy utility object."""
         self.subgroup = subgroup  # Store subgroup for cropping
         self.fill_color = fill_color  # Color to fill the masked region
         self.map_coor = map_coor
 
     def __call__(self, image):
+        """Apply this callable utility to its input."""
 
         self.map_coor   
         # print(f'self.map_coor[self.subgroup :::: {self.map_coor[self.subgroup]}')
@@ -3235,6 +3315,7 @@ class CustomCrop:
 ##################################################################################
 
 def load_tuned_threshold(paths, params,component=None, VERBOSE=False):
+    """Legacy utility helper for load tuned threshold."""
     if component is None:
         return None, None, None, None
     
@@ -3272,6 +3353,7 @@ def load_tuned_threshold(paths, params,component=None, VERBOSE=False):
 def plot_intermedidate_figs(inpu,recon,diff_img,component,idx,video_savepath_part,
                             norm_score,color_score,normscore_text,thres_text,batch_scores,
                             destroy_figs = False):
+    """Legacy utility helper for plot intermedidate figs."""
     fig, axxes = plt.subplots(1, 3, figsize=(12, 6))
     ax1,ax2,ax3 = axxes[0],axxes[1],axxes[2]
     ax1.imshow(inpu)
@@ -3300,6 +3382,7 @@ def plot_intermedidate_figs(inpu,recon,diff_img,component,idx,video_savepath_par
 
 #################################################################################################################################################
 def plot_anomalymaps(diff_img,component,idx,video_savepath_part,color_score,normscore_text,norm_score,threshold_cmap_ls,fontsize=10,destroy_figs = False):
+    """Legacy utility helper for plot anomalymaps."""
     threshold_cmap,threshold_cmap_unexpected = threshold_cmap_ls
     fig = plt.figure(figsize=(4, 4))
 
@@ -3322,6 +3405,7 @@ def plot_anomalymaps(diff_img,component,idx,video_savepath_part,color_score,norm
 #################################################################################################################################################
 
 def plot_component_boundary(full_anomaly_map_np,base_mask,norm_score,ax,threshold_cmap, verbose=False):
+    """Legacy utility helper for plot component boundary."""
     boundary_color = 'red' if norm_score > 0.5 else 'black'
     # 2. Overlay the anomaly map with transparency
     ax.imshow(full_anomaly_map_np, cmap=threshold_cmap, vmin=0, vmax=2)
@@ -3356,6 +3440,7 @@ def plot_comparison(full_anomaly_map, components_masks, comp_map_list, component
                    batch_scores_component, component_threshold, video_savepath, idx,
                    threshold_cmap,
                    VERBOSE=True):
+    """Legacy utility helper for plot comparison."""
     fig, axes = plt.subplots(1, len(components_ls)+1, figsize=(12, 6))
     ax = axes[0]
     
@@ -3516,8 +3601,10 @@ def plot_final_results_v2(image, full_anomaly_map, components_masks, comp_map_li
 #######################
 ################################################
 def accuracy_score(y_true, y_pred):
+    """Legacy utility helper for accuracy score."""
     return np.mean(y_true == y_pred)  # Same as sklearn's accuracy_score
 def f1_score(y_true, y_pred):
+    """Legacy utility helper for f1 score."""
     tp = np.sum((y_true == 1) & (y_pred == 1))
     fp = np.sum((y_true == 0) & (y_pred == 1))
     fn = np.sum((y_true == 1) & (y_pred == 0))
@@ -3539,6 +3626,7 @@ def f1_score(y_true, y_pred):
 # -------------------------------------------------
 
 def get_allowed_segment_in_safety_area():
+    """Legacy utility helper for get allowed segment in safety area."""
     allowed_segment_in_safety_area = {
         'PLeft': [
             ('Boxes','#4DA43C', (77,164,60), 'Boxes'),
@@ -3571,6 +3659,7 @@ def get_allowed_segment_in_safety_area():
 # Function --> component_to_colormap
 # -------------------------------------------------
 def get_component_to_colormap():
+    """Legacy utility helper for get component to colormap."""
     component_to_colormap = {'bg':('#000000',(0,0,0),'Background' ),
                             'PLeft':('#3C66A4',(60,102,164),'Pallet Left' ),
                         'PRight':('#3C66A4',(60,102,164),'Pallet Right' ),
@@ -3587,6 +3676,7 @@ def get_component_to_colormap():
 # -------------------------------------------------
 
 def get_disallowed_color_for_object(anomalous_type=None, verbose=True, mode='old'):
+    """Legacy utility helper for get disallowed color for object."""
     if anomalous_type is None:
         assert 'None'
     if anomalous_type=='unexpected_person':
@@ -3616,6 +3706,7 @@ def get_disallowed_color_for_object(anomalous_type=None, verbose=True, mode='old
 # Function --> fast_unique_rows_with_counts
 # -------------------------------------------------
 def fast_unique_rows_with_counts(arr):
+    """Legacy utility helper for fast unique rows with counts."""
     arr_view = np.ascontiguousarray(arr).view(
         np.dtype((np.void, arr.dtype.itemsize * arr.shape[1]))
     )
@@ -3628,6 +3719,7 @@ def fast_unique_rows_with_counts(arr):
 # -------------------------------------------------
 
 def segments_to_color(real_batch_segments, verbose = True):
+    """Legacy utility helper for segments to color."""
     rounded_colors = real_batch_segments.reshape((-1, 3)).astype(np.uint8)
 
     # Find unique colors and their counts
@@ -3647,6 +3739,7 @@ def segments_to_color(real_batch_segments, verbose = True):
 # -------------------------------------------------
 
 def print_segments_to_bins(rounded_colors,component_to_colormap,colors_count_dict):
+    """Legacy utility helper for print segments to bins."""
     # plt.imshow(real_batch_segments, cmap='gray')
     # plt.xticks([])
     # plt.yticks([])
@@ -3673,6 +3766,7 @@ def print_segments_to_bins(rounded_colors,component_to_colormap,colors_count_dic
 # Function --> segments_to_bins
 # -------------------------------------------------
 def segments_to_bins(rounded_colors, component_to_colormap, colors_count_dict, verbose=True):
+    """Legacy utility helper for segments to bins."""
     total_pixels = rounded_colors.shape[0]
     n_components = len(component_to_colormap)
     if verbose:
@@ -3711,12 +3805,14 @@ def segments_to_bins(rounded_colors, component_to_colormap, colors_count_dict, v
 # Function --> rgb_to_hex
 # -------------------------------------------------
 def rgb_to_hex(rgb):
+    """Legacy utility helper for rgb to hex."""
     return '{:02X}{:02X}{:02X}'.format(*rgb)
 
 # -------------------------------------------------
 # Function --> plot_found_color
 # -------------------------------------------------
 def plot_found_color(colors_found,counts,rounded_colors, verbose=True):
+    """Legacy utility helper for plot found color."""
     if verbose:
         print('Colors found in segments (sorted by pixel count) --> ', len(colors_found))
         for color, count in zip(colors_found, counts):
@@ -3742,6 +3838,7 @@ def plot_found_color(colors_found,counts,rounded_colors, verbose=True):
 # Function --> get_component_segmentation         |
 # -------------------------------------------------
 def get_component_segmentation(seg_np,component_mask):
+    """Legacy utility helper for get component segmentation."""
     component_mask3 = np.stack([component_mask != 0] * 3, axis=-1, dtype=bool)
     # print(component_mask3.shape, component_mask3.dtype)
     return seg_np * component_mask3
@@ -3761,6 +3858,7 @@ def get_combined_mask(image_np,seg_np, paths, mask_image_name=None,disallowed_co
                        combine_types=['PLeft', 'PRight'],plot_=True,plot_found_color_=False,plot_title = True,fixed_contour_color_val=None,
                         fixed_contour_color=(0,0,255),
                        check_anomalous=False,verbose=False):
+    """Legacy utility helper for get combined mask."""
     if check_anomalous:
         colors_found, counts,rounded_colors,colors_count_dict = segments_to_color(seg_np, verbose=False)
         # print('colors_found',colors_found   )
@@ -3842,10 +3940,12 @@ def get_combined_mask(image_np,seg_np, paths, mask_image_name=None,disallowed_co
 
 # Function to interpolate between two latent vectors
 def interpolate_vectors(z1, z2, num_steps=10):
+    """Legacy utility helper for interpolate vectors."""
     return [z1 * (1 - alpha) + z2 * alpha for alpha in np.linspace(0, 1, num_steps)]
 
 # Function to plot the interpolated images
 def plot_interpolations(encoder, decoder, train_loader, num_pairs=5, num_steps=10):
+    """Legacy utility helper for plot interpolations."""
     fig, axes = plt.subplots(num_pairs, num_steps + 2, figsize=(15, 1.5 * num_pairs))
     
     for pair_idx in range(num_pairs):
@@ -3900,6 +4000,7 @@ def plot_interpolations(encoder, decoder, train_loader, num_pairs=5, num_steps=1
 
 
 def count_images_per_class(dataset, class_names=None):
+    """Legacy utility helper for count images per class."""
     # Many torchvision datasets have 'targets' or 'labels'
     if hasattr(dataset, 'targets'):
         labels = dataset.targets
@@ -3926,6 +4027,7 @@ def plot_intermedidate_figs(inpu,recon,diff_img,component,idx,video_savepath_par
                             norm_score,color_score,normscore_text,thres_text,batch_scores,
                             threshold_values=None,
                             destroy_figs = False):
+    """Legacy utility helper for plot intermedidate figs."""
     threshold_cmap, threshold_cmap_unexpected, selected_threshold =  threshold_values
     fig, axxes = plt.subplots(1, 3, figsize=(12, 6))
     ax1,ax2,ax3 = axxes[0],axxes[1],axxes[2]
@@ -3959,6 +4061,7 @@ def plot_intermedidate_figs(inpu,recon,diff_img,component,idx,video_savepath_par
 
 
 def plot_label_timeline_dual(loader_or_dataset, fps=5, title="Label Timeline (Frames + Time)"):
+    """Legacy utility helper for plot label timeline dual."""
 
     # --------------------------------------------------------------
     # 1) Resolve dataset and iterate through it
@@ -4056,6 +4159,7 @@ def plot_label_timeline_dual(loader_or_dataset, fps=5, title="Label Timeline (Fr
 
 
 def plot_label_timeline_dual_axis(loader_or_dataset, fps=5, title="Anomaly Timeline (Frame + Time)"):
+    """Legacy utility helper for plot label timeline dual axis."""
 
     # --------------------------------------------------------------
     # 1) Resolve loader/dataset and extract ordered labels

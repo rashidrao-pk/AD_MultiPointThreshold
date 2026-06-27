@@ -9,6 +9,7 @@ from sklearn.metrics import ConfusionMatrixDisplay, RocCurveDisplay, PrecisionRe
 
 
 def read_predictions(run_dir):
+    """Load per-sample predictions from an experiment run directory."""
     run_dir = Path(run_dir)
     pred_path = run_dir / "predictions.csv"
 
@@ -19,6 +20,7 @@ def read_predictions(run_dir):
 
 
 def save_confusion_matrix(df, out_dir):
+    """Save a confusion-matrix plot for binary predictions."""
     fig, ax = plt.subplots(figsize=(5, 5))
 
     ConfusionMatrixDisplay.from_predictions(
@@ -37,6 +39,7 @@ def save_confusion_matrix(df, out_dir):
 
 
 def save_roc_pr(df, out_dir):
+    """Save ROC and precision-recall curve plots when both classes are present."""
     if df["true_label"].nunique() < 2:
         print("[!] Skipping ROC/PR: only one class is present.")
         return
@@ -65,6 +68,7 @@ def save_roc_pr(df, out_dir):
 
 
 def save_score_distribution(df, out_dir):
+    """Save normal/anomaly score distribution histograms."""
     fig, ax = plt.subplots(figsize=(7, 5))
 
     normal = df[df["true_label"] == 0]["score"]
@@ -92,6 +96,7 @@ def save_score_distribution(df, out_dir):
 
 
 def save_error_type_bar(df, out_dir):
+    """Save a bar chart of TN, FP, FN, and TP counts."""
     counts = df["error_type"].value_counts().reindex(["TN", "FP", "FN", "TP"]).fillna(0)
 
     fig, ax = plt.subplots(figsize=(6, 4))
@@ -108,6 +113,7 @@ def save_error_type_bar(df, out_dir):
 
 
 def safe_open_image(path):
+    """Open an image path as RGB, returning None on failure."""
     try:
         return Image.open(path).convert("RGB")
     except Exception:
@@ -115,6 +121,7 @@ def safe_open_image(path):
 
 
 def select_top_cases(df, error_type, k=5):
+    """Select the most informative rows for a prediction outcome type."""
     sub = df[df["error_type"] == error_type].copy()
 
     if len(sub) == 0:
@@ -136,6 +143,7 @@ def select_top_cases(df, error_type, k=5):
 
 
 def save_case_gallery(df, out_dir, error_type, k=5):
+    """Save an image gallery and CSV for selected prediction outcome cases."""
     selected = select_top_cases(df, error_type, k=k)
 
     if len(selected) == 0:
@@ -174,6 +182,7 @@ def save_case_gallery(df, out_dir, error_type, k=5):
 
 
 def save_per_class_performance(df, out_dir):
+    """Save per-class metrics and an optional mean-score plot."""
     if "class_name" not in df.columns:
         return
 
@@ -220,6 +229,7 @@ def save_per_class_performance(df, out_dir):
 
 
 def main(run_dir):
+    """Generate all result plots for an experiment run directory."""
     run_dir = Path(run_dir)
     out_dir = run_dir / "plots"
     out_dir.mkdir(parents=True, exist_ok=True)

@@ -21,14 +21,17 @@ from data import load_data
 from utils import read_config, resolve_device, save_config_yaml
 
 def _repo_root():
+    """Return the repository root for path resolution."""
     return Path(__file__).resolve().parents[2]
 
 
 def _namespace_set(obj, name, value):
+    """Set an attribute on a namespace-style object."""
     setattr(obj, name, value)
 
 
 def _resolve_project_paths(config, project_root):
+    """Resolve relative data, checkpoint, and output paths against the project root."""
     data_root = Path(config.data.dataset_root)
     if not data_root.is_absolute():
         config.data.dataset_root = str(project_root / data_root)
@@ -43,6 +46,7 @@ def _resolve_project_paths(config, project_root):
 
 
 def _make_run_dir(config, suffix=""):
+    """Create a timestamped training run directory."""
     timestamp = time.strftime("%Y_%m_%d_%H_%M_%S")
     dataset = config.data.name
     category = getattr(config.data, "category", "all")
@@ -56,6 +60,7 @@ def _make_run_dir(config, suffix=""):
 
 
 def parse_args():
+    """Parse command-line arguments for the training entry point."""
     parser = argparse.ArgumentParser(description="Train anomaly-detection models from a config file.")
     parser.add_argument("--config", default="configs/mvtec.yaml", help="Path to YAML config.")
     parser.add_argument("--model", default=None, help="Override config.model.name.")
@@ -67,6 +72,7 @@ def parse_args():
 
 
 def dispatch_trainer(config):
+    """Normalize the model name and return its registered trainer."""
     from models import get_trainer, normalize_model_name
 
     config.model.name = normalize_model_name(config.model.name)
@@ -74,6 +80,7 @@ def dispatch_trainer(config):
 
 
 def main():
+    """Run the shared training workflow."""
     args = parse_args()
     project_root = _repo_root()
     config_path = Path(args.config)

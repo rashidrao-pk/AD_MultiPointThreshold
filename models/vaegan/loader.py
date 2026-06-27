@@ -3,6 +3,7 @@ import torch
 from .model import Encoder, Decoder, Discriminator
 
 def get_checkpoint_path(model_cfg, data_cfg):
+    """Build the expected checkpoint path for a dataset/model configuration."""
     # i think they all have this format, to check... 
     if data_cfg.name == "MVTec":
         dataset_folder = "AD_MVTec"
@@ -23,6 +24,7 @@ def get_checkpoint_path(model_cfg, data_cfg):
 
 
 def load_model(config, device):
+    """Load VAE-GAN encoder, decoder, and discriminator weights for inference."""
     model_cfg = config.model
     data_cfg = config.data
     ckpt_path = get_checkpoint_path(model_cfg, data_cfg)

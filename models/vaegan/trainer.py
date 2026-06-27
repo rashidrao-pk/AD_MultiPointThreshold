@@ -17,19 +17,23 @@ from .model import Decoder, Discriminator, Encoder
 
 
 def _cfg_get(obj, name, default=None):
+    """Read an optional config attribute with a default fallback."""
     return getattr(obj, name, default) if obj is not None else default
 
 
 def _reparameterize(mu, logvar):
+    """Sample latent vectors using the VAE reparameterization trick."""
     std = torch.exp(0.5 * logvar)
     return mu + torch.randn_like(std) * std
 
 
 def _to_image(tensor):
+    """Convert a normalized CHW tensor into an HWC image array."""
     return ((tensor.detach().cpu().clamp(-1, 1) + 1) / 2).permute(1, 2, 0).numpy()
 
 
 def _plot_history(loss_history, output_path):
+    """Save training and validation loss curves to an image file."""
     if not loss_history:
         return
 
@@ -57,6 +61,7 @@ def _plot_history(loss_history, output_path):
 
 
 def _save_reconstruction_preview(encoder, decoder, loader, device, output_path, max_images=6):
+    """Save a side-by-side preview of input and reconstructed images."""
     output_path = Path(output_path)
     output_path.parent.mkdir(parents=True, exist_ok=True)
 
@@ -95,6 +100,7 @@ def train_one_epoch(
     beta_kl=1e-4,
     beta_gan=1e-4,
 ):
+    """Train encoder, decoder, and discriminator for one epoch."""
     encoder.train()
     decoder.train()
     discriminator.train()
@@ -162,6 +168,7 @@ def train_one_epoch(
 
 
 def validate(encoder, decoder, val_loader, device):
+    """Compute validation reconstruction loss."""
     encoder.eval()
     decoder.eval()
     reconstruction_loss_fn = nn.MSELoss()
@@ -180,6 +187,7 @@ def validate(encoder, decoder, val_loader, device):
 
 
 def train_model(config, train_loader, val_loader, train_dataset, val_dataset, run_dir, device):
+    """Train a VAE-GAN model and save checkpoints, curves, and previews."""
     training_cfg = _cfg_get(config, "training", None)
     model_cfg = config.model
     model_name = str(_cfg_get(model_cfg, "name", "simple_vaegan"))

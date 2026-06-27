@@ -3,6 +3,7 @@ from .reconstruction import *
 
 
 def score_samples(loader, enc, dec, disc, config):
+    """Dispatch sample scoring to the method selected in the config."""
 
     method = config.scoring.method
     device = config.device

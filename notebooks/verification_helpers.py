@@ -20,6 +20,7 @@ from torch.utils.data import DataLoader, Subset
 
 
 def setup_project():
+    """Resolve the project root and ensure it is importable."""
     project_root = Path.cwd()
     if project_root.name == "notebooks":
         project_root = project_root.parent
@@ -29,6 +30,7 @@ def setup_project():
 
 
 def load_config_data(config_name):
+    """Load a config, dataset objects, loaders, and metadata for verification notebooks."""
     project_root = setup_project()
 
     from data import load_data
@@ -69,6 +71,7 @@ def load_config_data(config_name):
 
 
 def subset_indices(dataset, max_samples=None):
+    """Select a class-balanced subset of dataset indices when possible."""
     if max_samples is None or max_samples >= len(dataset):
         return list(range(len(dataset)))
 
@@ -96,16 +99,19 @@ def subset_indices(dataset, max_samples=None):
 
 
 def subset_loader(dataset, batch_size, max_samples=None, shuffle=False, num_workers=0):
+    """Build a DataLoader over a full dataset or selected subset."""
     if max_samples is not None:
         dataset = Subset(dataset, subset_indices(dataset, max_samples))
     return DataLoader(dataset, batch_size=batch_size, shuffle=shuffle, num_workers=num_workers)
 
 
 def denorm(image_tensor):
+    """Convert a normalized CHW tensor into an HWC image array."""
     return ((image_tensor.detach().cpu().clamp(-1, 1) + 1) / 2).permute(1, 2, 0).numpy()
 
 
 def show_samples(dataset, title, max_images=8):
+    """Display sample images and return their metadata records."""
     records = []
     images = []
     for idx in range(min(max_images, len(dataset))):
@@ -139,6 +145,7 @@ def show_samples(dataset, title, max_images=8):
 
 
 def load_vaegan_model(cfg, device):
+    """Load the configured VAE-GAN checkpoint and return its path and modules."""
     from models.vaegan.loader import get_checkpoint_path, load_model
 
     checkpoint_path = get_checkpoint_path(cfg.model, cfg.data)
@@ -147,6 +154,7 @@ def load_vaegan_model(cfg, device):
 
 
 def find_training_artifacts(project_root, cfg, checkpoint_path=None):
+    """Find available training-history and curve artifacts for a config."""
     candidates = []
     if checkpoint_path is not None:
         checkpoint_path = Path(checkpoint_path)
@@ -192,6 +200,7 @@ def find_training_artifacts(project_root, cfg, checkpoint_path=None):
 
 
 def load_training_history(project_root, cfg, checkpoint_path=None):
+    """Load the first available training-history CSV and related artifacts."""
     artifacts = find_training_artifacts(project_root, cfg, checkpoint_path)
     history_paths = [path for path in artifacts if path.suffix.lower() == ".csv"]
     if not history_paths:
@@ -200,6 +209,7 @@ def load_training_history(project_root, cfg, checkpoint_path=None):
 
 
 def show_training_curves(project_root, cfg, checkpoint_path=None):
+    """Display training curves from saved history artifacts."""
     history, artifacts = load_training_history(project_root, cfg, checkpoint_path)
     curve_paths = [path for path in artifacts if path.name == "training_curves.png"]
 
@@ -244,6 +254,7 @@ def show_training_curves(project_root, cfg, checkpoint_path=None):
 
 
 def show_reconstructions(encoder, decoder, loader, device, max_images=6):
+    """Display input and reconstructed images from a loader batch."""
     encoder.eval()
     decoder.eval()
     images, labels = next(iter(loader))
@@ -277,6 +288,7 @@ def run_subset_inference(
     max_train_samples=512,
     max_test_samples=512,
 ):
+    """Run scoring, thresholding, and metrics on train/test subsets."""
     from modules.evaluation import prepare_binary_labels, ranking_metrics, threshold_metrics
     from modules.scoring import score_samples
     from modules.thresholding import fit_threshold
@@ -342,6 +354,7 @@ def run_subset_inference(
 
 
 def save_notebook_outputs(project_root, dataset_name, category, metrics, results_df, summary):
+    """Save notebook verification metrics, results, and dataset summary."""
     output_dir = project_root / "results" / "notebooks" / f"{dataset_name}_{category}_verification"
     output_dir.mkdir(parents=True, exist_ok=True)
     results_df.to_csv(output_dir / "inference_results.csv", index=False)

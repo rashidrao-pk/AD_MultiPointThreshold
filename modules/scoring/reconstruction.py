@@ -3,18 +3,22 @@ from tqdm import tqdm
 
 
 def reconstruction_mse_score(loader, enc, dec, device):
+    """Score samples by mean squared reconstruction error."""
     return _reconstruction_score(loader, enc, dec, device, metric="mse")
 
 
 def reconstruction_l1_score(loader, enc, dec, device):
+    """Score samples by mean absolute reconstruction error."""
     return _reconstruction_score(loader, enc, dec, device, metric="l1")
 
 
 def reconstruction_l2_score(loader, enc, dec, device):
+    """Score samples by L2 reconstruction error."""
     return _reconstruction_score(loader, enc, dec, device, metric="l2")
 
 
 def _reconstruction_score(loader, enc, dec, device, metric="mse"):
+    """Compute reconstruction scores and labels for one scalar error metric."""
     enc.eval()
     dec.eval()
 
@@ -46,6 +50,7 @@ def _reconstruction_score(loader, enc, dec, device, metric="mse"):
 
 
 def reconstruction_quantile_score(loader, enc, dec, device, quantiles):
+    """Score samples using quantiles of per-pixel absolute reconstruction error."""
     enc.eval()
     dec.eval()
 

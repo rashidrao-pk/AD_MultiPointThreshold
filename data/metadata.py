@@ -28,6 +28,7 @@ def sample_records(dataset, limit=None):
 
 
 def dataset_summary(dataset, name):
+    """Build a compact metadata summary for a dataset."""
     records = sample_records(dataset)
     class_counts = {}
     for record in records:

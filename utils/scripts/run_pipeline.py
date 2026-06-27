@@ -25,10 +25,12 @@ from utils import read_config, resolve_device, save_config_yaml
 
 
 def _repo_root():
+    """Return the repository root for path resolution."""
     return Path(__file__).resolve().parents[2]
 
 
 def _as_list(value, default):
+    """Normalize optional scalar or sequence values to a list."""
     if value is None:
         return default
     if isinstance(value, (list, tuple)):
@@ -37,6 +39,7 @@ def _as_list(value, default):
 
 
 def _namespace_to_dict(obj):
+    """Convert namespace-style config objects into dictionaries."""
     if hasattr(obj, "__dict__"):
         return {key: _namespace_to_dict(value) for key, value in vars(obj).items()}
     if isinstance(obj, list):
@@ -45,6 +48,7 @@ def _namespace_to_dict(obj):
 
 
 def _dict_to_namespace(value):
+    """Convert nested dictionaries into namespace-style config objects."""
     if isinstance(value, dict):
         return SimpleNamespace(**{key: _dict_to_namespace(item) for key, item in value.items()})
     if isinstance(value, list):
@@ -53,10 +57,12 @@ def _dict_to_namespace(value):
 
 
 def _clone_config(config):
+    """Deep-copy a namespace-style config object."""
     return _dict_to_namespace(copy.deepcopy(_namespace_to_dict(config)))
 
 
 def _resolve_project_paths(config, project_root):
+    """Resolve relative data, checkpoint, and output paths against the project root."""
     data_root = Path(config.data.dataset_root)
     if not data_root.is_absolute():
         config.data.dataset_root = str(project_root / data_root)
@@ -71,11 +77,13 @@ def _resolve_project_paths(config, project_root):
 
 
 def _get_experiment_models(config):
+    """Return the model names configured for the experiment sweep."""
     experiment = getattr(config, "experiment", None)
     return _as_list(getattr(experiment, "models", None), [getattr(config.model, "name", "advis_vaegan")])
 
 
 def _get_scoring_setups(config):
+    """Return configured scoring setups or a default from config.scoring."""
     experiment = getattr(config, "experiment", None)
     setups = getattr(experiment, "scoring_setups", None)
     if setups:
@@ -84,6 +92,7 @@ def _get_scoring_setups(config):
 
 
 def _get_threshold_setups(config):
+    """Return configured threshold setups or a default from config.threshold."""
     experiment = getattr(config, "experiment", None)
     setups = getattr(experiment, "threshold_setups", None)
     if setups:
@@ -99,6 +108,7 @@ def _get_threshold_setups(config):
 
 
 def _run_dir(config, suffix=""):
+    """Build the output directory path for a pipeline run."""
     timestamp = time.strftime("%Y_%m_%d_%H_%M_%S")
     suffix_part = f"_{suffix}" if suffix else ""
     return Path(config.output.dir) / "pipeline" / (
@@ -107,6 +117,7 @@ def _run_dir(config, suffix=""):
 
 
 def _threshold_to_dict(threshold_model):
+    """Convert threshold model attributes to serializable values."""
     out = {}
     for name in ("threshold", "thresholds", "quantiles", "decision_rule"):
         if hasattr(threshold_model, name):
@@ -118,12 +129,14 @@ def _threshold_to_dict(threshold_model):
 
 
 def _ranking_scores(scores):
+    """Collapse scalar or vector scores into values suitable for ranking metrics."""
     if scores.dim() == 1:
         return scores.detach().cpu().numpy()
     return scores.max(dim=1).values.detach().cpu().numpy()
 
 
 def parse_args():
+    """Parse command-line arguments for pipeline sweeps."""
     parser = argparse.ArgumentParser(description="Run model/scoring/threshold/inference sweeps.")
     parser.add_argument("--config", default="configs/mvtec.yaml")
     parser.add_argument("--suffix", default="")
@@ -135,6 +148,7 @@ def parse_args():
 
 
 def main():
+    """Run the configured train, scoring, threshold, and evaluation sweep."""
     args = parse_args()
     project_root = _repo_root()
     config_path = Path(args.config)

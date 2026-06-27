@@ -10,6 +10,7 @@ IMG_EXTS = {".png", ".jpg", ".jpeg", ".bmp", ".webp"}
 
 
 def list_images(root):
+    """Return sorted image paths under a directory."""
     root = Path(root)
     if not root.exists():
         return []
@@ -21,7 +22,10 @@ def list_images(root):
 
 
 class CorridorDataset(Dataset):
+    """Dataset wrapper for corridor image samples and binary labels."""
+
     def __init__(self, samples, transform=None, classes=None, class_to_idx=None):
+        """Store corridor samples, transforms, labels, and class metadata."""
         self.samples = samples
         self.imgs = samples
         self.targets = [label for _, label in samples]
@@ -30,9 +34,11 @@ class CorridorDataset(Dataset):
         self.class_to_idx = class_to_idx or {name: idx for idx, name in enumerate(self.classes)}
 
     def __len__(self):
+        """Return the number of image samples."""
         return len(self.samples)
 
     def __getitem__(self, idx):
+        """Load one RGB image and its label by index."""
         path, label = self.samples[idx]
         image = Image.open(path).convert("RGB")
 
@@ -43,6 +49,7 @@ class CorridorDataset(Dataset):
 
 
 def get_dataloaders_corridor(cfg):
+    """Build train and test dataloaders for the robotics hazards corridor dataset."""
     root = Path(cfg.dataset_root)
     train_transform, eval_transform = build_transforms(
         cfg.img_size,

@@ -32,6 +32,7 @@ MODEL_INFO = {
 
 
 def normalize_model_name(name):
+    """Return the canonical registry name for a configured model alias."""
     key = str(name or "advis_vaegan").lower().replace("-", "_")
     if key not in MODEL_ALIASES:
         raise ValueError(f"Unsupported model: {name}")
@@ -39,6 +40,7 @@ def normalize_model_name(name):
 
 
 def get_trainer(name):
+    """Return the training function registered for a model name."""
     model_name = normalize_model_name(name)
     if model_name in {"advis_vaegan", "simple_vaegan"}:
         return train_vaegan
@@ -46,6 +48,7 @@ def get_trainer(name):
 
 
 def get_checkpoint_loader(name):
+    """Return the checkpoint-loading function registered for a model name."""
     model_name = normalize_model_name(name)
     if model_name == "advis_vaegan":
         return load_advis_vaegan_checkpoint
@@ -53,8 +56,10 @@ def get_checkpoint_loader(name):
 
 
 def get_model_info(name):
+    """Return display metadata for a registered model."""
     return MODEL_INFO[normalize_model_name(name)]
 
 
 def has_pretrained_loader(name):
+    """Return whether a model has a registered pretrained checkpoint loader."""
     return bool(get_model_info(name).get("has_pretrained_loader", False))

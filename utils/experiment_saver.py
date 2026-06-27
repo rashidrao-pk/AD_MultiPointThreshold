@@ -9,6 +9,7 @@ import yaml
 
 
 def config_to_dict(obj):
+    """Convert nested config objects into plain Python containers."""
     if isinstance(obj, dict):
         return {key: config_to_dict(value) for key, value in obj.items()}
 
@@ -22,6 +23,7 @@ def config_to_dict(obj):
 
 
 def experiment_hash(config, suffix: str = "") -> str:
+    """Build a stable short hash for the experiment-defining config fields."""
     signature = {
         "data": config_to_dict(config.data),
         "model": config_to_dict(config.model),
@@ -35,6 +37,7 @@ def experiment_hash(config, suffix: str = "") -> str:
 
 
 def find_existing_experiment(runs_csv_path: Path, exp_hash: str):
+    """Return a completed run row matching the experiment hash, if one exists."""
     if not runs_csv_path.exists():
         return None
 
@@ -52,6 +55,7 @@ def find_existing_experiment(runs_csv_path: Path, exp_hash: str):
 
 
 def should_skip_experiment(config, suffix: str = "", force: bool = False):
+    """Decide whether an experiment should be skipped because it already ran."""
     if force:
         return False, None
 
@@ -63,6 +67,7 @@ def should_skip_experiment(config, suffix: str = "", force: bool = False):
 
 
 def get_next_experiment_id_from_csv(runs_csv_path: Path, width: int = 5) -> str:
+    """Return the next sequential experiment id from a runs CSV file."""
     if not runs_csv_path.exists():
         return f"E{1:0{width}d}"
 
@@ -87,6 +92,7 @@ def get_next_experiment_id_from_csv(runs_csv_path: Path, width: int = 5) -> str:
 
 
 def to_python(value):
+    """Convert tensors and scalar-like objects into JSON-serializable values."""
     if isinstance(value, torch.Tensor):
         value = value.detach().cpu()
 
@@ -102,10 +108,12 @@ def to_python(value):
 
 
 def flatten_metrics(metrics: dict) -> dict:
+    """Convert a metrics dictionary into JSON-friendly scalar values."""
     return {key: to_python(value) for key, value in metrics.items()}
 
 
 def detach_cpu(value):
+    """Detach tensors and move them to CPU while leaving other values unchanged."""
     if isinstance(value, torch.Tensor):
         return value.detach().cpu()
 
@@ -113,11 +121,13 @@ def detach_cpu(value):
 
 
 def save_config_yaml(config, path: Path):
+    """Write an experiment config to YAML."""
     with open(path, "w", encoding="utf-8") as f:
         yaml.safe_dump(config_to_dict(config), f, sort_keys=False)
 
 
 def append_runs_csv(csv_path: Path, row: dict):
+    """Append a run row to a CSV file while preserving existing columns."""
     csv_path.parent.mkdir(parents=True, exist_ok=True)
 
     if csv_path.exists():
@@ -139,12 +149,14 @@ def append_runs_csv(csv_path: Path, row: dict):
 
 
 def tensor_to_list(x):
+    """Convert tensors or iterable values into plain Python lists."""
     if isinstance(x, torch.Tensor):
         return x.detach().cpu().tolist()
     return list(x)
 
 
 def get_threshold_payload(threshold_model):
+    """Extract serializable threshold attributes from a threshold model."""
     payload = {}
 
     if hasattr(threshold_model, "threshold"):
@@ -163,6 +175,7 @@ def get_threshold_payload(threshold_model):
 
 
 def classify_error(true_label, pred_label):
+    """Classify a binary prediction as TP, TN, FP, or FN."""
     true_label = int(true_label)
     pred_label = int(pred_label)
 
@@ -179,11 +192,7 @@ def classify_error(true_label, pred_label):
 
 
 def get_dataset_paths_and_names(dataset):
-    """
-    Supports:
-    - torchvision.datasets.ImageFolder
-    - custom datasets with .samples = [(path, label), ...]
-    """
+    """Return sample paths and class names from datasets that expose samples."""
     paths = []
     class_names = []
 
@@ -206,18 +215,7 @@ def get_dataset_paths_and_names(dataset):
 
 
 def score_to_columns(score):
-    """
-    Converts scalar scores or vector scores to CSV-friendly columns.
-
-    Single-point:
-        score = 0.123
-
-    Multi-point:
-        score_q0 = ...
-        score_q1 = ...
-        score_mean = ...
-        score_max = ...
-    """
+    """Convert scalar or vector anomaly scores into CSV-friendly columns."""
     if isinstance(score, torch.Tensor):
         score = score.detach().cpu()
 
@@ -258,6 +256,7 @@ def save_predictions_csv_json(
     prediction,
     threshold_model,
 ):
+    """Save per-sample predictions and metadata to CSV and JSON files."""
     paths, class_names = get_dataset_paths_and_names(test_dataset)
 
     test_scores = detach_cpu(test_scores)
@@ -330,6 +329,7 @@ def save_experiment_run(
     threshold_model=None,
     suffix: str = "",
 ):
+    """Persist experiment outputs, metrics, config, predictions, and run metadata."""
     root = Path(config.output.dir)
     experiments_dir = root / "experiments"
     runs_csv_path = root / "runs.csv"
