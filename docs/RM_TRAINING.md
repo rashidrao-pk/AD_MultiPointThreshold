@@ -134,3 +134,9 @@ python -m modules.training.train --config configs/mvtec_mac.yaml --model vaegan 
   --latent_space_classes both \
   --latent_projection pca
 ```
+
+```bash
+# RUN Web App to see live score and dynamics
+python app.py
+# visit --> http://127.0.0.1:8000
+```
