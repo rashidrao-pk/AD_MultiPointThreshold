@@ -16,6 +16,7 @@ import yaml
 
 ROOT = Path(__file__).resolve().parent
 RUNS_ROOT = ROOT / "results" / "runs"
+EXPERIMENTS_ROOT = ROOT / "results" / "experiments"
 DEFAULT_HOST = "127.0.0.1"
 DEFAULT_PORT = 8000
 
@@ -29,6 +30,21 @@ PLOT_TYPES = {
     "radius": ("plots/latent_radius", "latent_radius_epoch_"),
     "loss_balance": ("plots/loss_balance", "loss_balance_epoch_"),
     "validation": ("plots/validation_quality", "validation_quality_epoch_"),
+}
+
+INFERENCE_PLOT_TYPES = {
+    "scores": ("plots", "score_distribution.png"),
+    "latent": ("plots", "latent_space.png"),
+    "samples": ("plots", "validation_samples.png"),
+    "confusion": ("plots", "confusion_matrix.png"),
+    "roc": ("plots", "roc_curve.png"),
+    "pr": ("plots", "precision_recall_curve.png"),
+    "outcomes": ("plots", "outcome_counts.png"),
+    "classes": ("plots", "mean_score_by_class.png"),
+    "tp": ("plots", "top_tp_gallery.png"),
+    "tn": ("plots", "top_tn_gallery.png"),
+    "fp": ("plots", "top_fp_gallery.png"),
+    "fn": ("plots", "top_fn_gallery.png"),
 }
 
 LOSS_HISTORY = "loss_history.csv"
@@ -100,6 +116,52 @@ def list_runs():
         }
         for path in sorted(runs, key=lambda item: item.stat().st_mtime, reverse=True)
     ]
+
+
+def list_experiments():
+    """Return known inference experiment folders."""
+    if not EXPERIMENTS_ROOT.exists():
+        return []
+    experiments = [path for path in EXPERIMENTS_ROOT.iterdir() if path.is_dir()]
+    return [
+        {
+            "name": path.name,
+            "path": _relative_to_root(path),
+            "mtime": path.stat().st_mtime,
+        }
+        for path in sorted(experiments, key=lambda item: item.stat().st_mtime, reverse=True)
+    ]
+
+
+def inference_plot_status(run_path):
+    """Return available inference plots for an experiment directory."""
+    plots = {}
+    latest_mtime = 0.0
+    for tab, (folder, filename) in INFERENCE_PLOT_TYPES.items():
+        path = run_path / folder / filename
+        exists = path.exists()
+        if exists:
+            latest_mtime = max(latest_mtime, path.stat().st_mtime)
+        plots[tab] = {
+            "exists": exists,
+            "path": _relative_to_root(path) if exists else None,
+            "mtime": path.stat().st_mtime if exists else None,
+        }
+
+    metrics_path = run_path / "metrics.json"
+    metrics = {}
+    if metrics_path.exists():
+        with open(metrics_path, "r", encoding="utf-8") as handle:
+            metrics = json.load(handle)
+        latest_mtime = max(latest_mtime, metrics_path.stat().st_mtime)
+
+    return {
+        "run": _relative_to_root(run_path),
+        "plots": plots,
+        "metrics": metrics,
+        "seconds_since_update": time.time() - latest_mtime if latest_mtime else None,
+        "server_time": time.time(),
+    }
 
 
 def list_epochs(run_path, tab):
@@ -242,8 +304,15 @@ class TrainingViewerHandler(SimpleHTTPRequestHandler):
         if parsed.path == "/training":
             self.path = "/app/training.html"
             return super().do_GET()
+        if parsed.path == "/inference":
+            self.path = "/app/inference.html"
+            return super().do_GET()
         if parsed.path == "/api/runs":
             return _json_response(self, {"runs": list_runs()})
+        if parsed.path == "/api/experiments":
+            return _json_response(self, {"experiments": list_experiments()})
+        if parsed.path == "/api/inference_status":
+            return self._handle_inference_status(parsed)
         if parsed.path == "/api/epochs":
             return self._handle_epochs(parsed)
         if parsed.path == "/api/status":
@@ -290,6 +359,15 @@ class TrainingViewerHandler(SimpleHTTPRequestHandler):
         try:
             run_path = _safe_run_path(query.get("run", [""])[0])
             return _json_response(self, run_status(run_path))
+        except Exception as exc:
+            return _json_response(self, {"error": str(exc)}, status=400)
+
+    def _handle_inference_status(self, parsed):
+        """Return latest inference plot and metric availability."""
+        query = parse_qs(parsed.query)
+        try:
+            run_path = _safe_run_path(query.get("run", [""])[0])
+            return _json_response(self, inference_plot_status(run_path))
         except Exception as exc:
             return _json_response(self, {"error": str(exc)}, status=400)
 

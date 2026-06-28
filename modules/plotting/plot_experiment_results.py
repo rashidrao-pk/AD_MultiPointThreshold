@@ -4,8 +4,18 @@ from pathlib import Path
 
 import matplotlib.pyplot as plt
 import pandas as pd
+import torch
 from PIL import Image
 from sklearn.metrics import ConfusionMatrixDisplay, RocCurveDisplay, PrecisionRecallDisplay
+
+from data import load_data
+from models.vaegan import load_model
+from utils import read_config
+from .inference_diagnostics import (
+    save_inference_latent_space,
+    save_inference_score_distribution,
+    save_inference_validation_samples,
+)
 
 
 def read_predictions(run_dir):
@@ -69,30 +79,7 @@ def save_roc_pr(df, out_dir):
 
 def save_score_distribution(df, out_dir):
     """Save normal/anomaly score distribution histograms."""
-    fig, ax = plt.subplots(figsize=(7, 5))
-
-    normal = df[df["true_label"] == 0]["score"]
-    anomaly = df[df["true_label"] == 1]["score"]
-
-    if len(normal) > 0:
-        ax.hist(normal, bins=40, alpha=0.6, label="Normal", density=True)
-
-    if len(anomaly) > 0:
-        ax.hist(anomaly, bins=40, alpha=0.6, label="Anomaly", density=True)
-
-    if "threshold" in df.columns and df["threshold"].notna().any():
-        threshold = df["threshold"].dropna().iloc[0]
-        ax.axvline(threshold, linestyle="--", linewidth=2, label=f"Threshold={threshold:.5f}")
-
-    ax.set_title("Normal vs Anomalous Score Distribution")
-    ax.set_xlabel("Anomaly score")
-    ax.set_ylabel("Density")
-    ax.legend()
-    ax.grid(alpha=0.3)
-
-    fig.tight_layout()
-    fig.savefig(out_dir / "score_distribution.png", dpi=300)
-    plt.close(fig)
+    return save_inference_score_distribution(df, out_dir / "score_distribution.png")
 
 
 def save_error_type_bar(df, out_dir):
@@ -228,6 +215,41 @@ def save_per_class_performance(df, out_dir):
         plt.close(fig)
 
 
+def save_model_backed_diagnostics(run_dir, out_dir):
+    """Save latent-space and validation reconstruction plots when config/model are available."""
+    config_path = Path(run_dir) / "config.yaml"
+    if not config_path.exists():
+        print(f"[!] Skipping model-backed diagnostics: missing {config_path}")
+        return
+
+    try:
+        config = read_config(config_path)
+        config.device = "cpu"
+        device = torch.device("cpu")
+        _, test_loader, _, _ = load_data(config)
+        encoder, decoder, _ = load_model(config, device)
+    except Exception as error:
+        print(f"[!] Skipping model-backed diagnostics: {error}")
+        return
+
+    save_inference_latent_space(
+        encoder,
+        test_loader,
+        device,
+        out_dir / "latent_space.png",
+        max_batches=12,
+        projection="pca",
+    )
+    save_inference_validation_samples(
+        encoder,
+        decoder,
+        test_loader,
+        device,
+        out_dir / "validation_samples.png",
+        max_batches=12,
+    )
+
+
 def main(run_dir):
     """Generate all result plots for an experiment run directory."""
     run_dir = Path(run_dir)
@@ -245,6 +267,7 @@ def main(run_dir):
         save_case_gallery(df, out_dir, error_type, k=5)
 
     save_per_class_performance(df, out_dir)
+    save_model_backed_diagnostics(run_dir, out_dir)
 
     print(f"[+] Saved plots to: {out_dir}")
 
