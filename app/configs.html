@@ -1,0 +1,480 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Config Preview</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --ink: #17202a;
+      --muted: #65707c;
+      --line: #d7dde4;
+      --panel: #ffffff;
+      --soft: #f4f7fa;
+      --accent: #1167b1;
+      --accent-soft: #eaf3fb;
+      --code: #0f1f2e;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      color: var(--ink);
+      background: var(--soft);
+    }
+
+    main {
+      width: min(1180px, calc(100% - 32px));
+      margin: 0 auto;
+      padding: 28px 0 40px;
+    }
+
+    header {
+      display: flex;
+      align-items: flex-end;
+      justify-content: space-between;
+      gap: 16px;
+      margin-bottom: 18px;
+    }
+
+    h1,
+    h2,
+    p {
+      margin: 0;
+    }
+
+    h1 {
+      font-size: clamp(1.8rem, 3vw, 2.8rem);
+      letter-spacing: 0;
+      line-height: 1.05;
+    }
+
+    p {
+      color: var(--muted);
+      line-height: 1.5;
+    }
+
+    a {
+      color: inherit;
+    }
+
+    .nav {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+
+    .button {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 38px;
+      padding: 0 14px;
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      background: var(--panel);
+      color: var(--ink);
+      font-weight: 650;
+      text-decoration: none;
+    }
+
+    .button.primary {
+      border-color: var(--accent);
+      background: var(--accent);
+      color: #ffffff;
+    }
+
+    .toolbar,
+    .details,
+    .viewer {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: var(--panel);
+      box-shadow: 0 12px 28px rgba(16, 32, 48, 0.07);
+    }
+
+    .toolbar {
+      display: grid;
+      grid-template-columns: minmax(260px, 1fr) auto;
+      gap: 12px;
+      align-items: end;
+      padding: 14px;
+      margin-bottom: 14px;
+    }
+
+    label {
+      display: grid;
+      gap: 6px;
+      color: var(--muted);
+      font-size: 0.82rem;
+      font-weight: 700;
+      text-transform: uppercase;
+    }
+
+    select {
+      width: 100%;
+      min-height: 40px;
+      padding: 0 10px;
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      background: #ffffff;
+      color: var(--ink);
+      font: inherit;
+      text-transform: none;
+    }
+
+    .details {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 10px;
+      padding: 12px;
+      margin-bottom: 14px;
+    }
+
+    .detail {
+      min-width: 0;
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      padding: 10px;
+      background: #fbfcfe;
+    }
+
+    .detail span {
+      display: block;
+      color: var(--muted);
+      font-size: 0.75rem;
+      font-weight: 700;
+      text-transform: uppercase;
+    }
+
+    .detail strong {
+      display: block;
+      margin-top: 4px;
+      overflow-wrap: anywhere;
+      font-size: 0.96rem;
+      font-weight: 700;
+    }
+
+    .viewer {
+      overflow: hidden;
+    }
+
+    .viewer-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 12px 14px;
+      border-bottom: 1px solid var(--line);
+      background: var(--accent-soft);
+    }
+
+    .viewer-head h2 {
+      font-size: 1rem;
+    }
+
+    pre {
+      margin: 0;
+      min-height: 540px;
+      max-height: calc(100vh - 290px);
+      overflow: auto;
+      padding: 16px;
+      background: #fbfcfe;
+      color: var(--code);
+      font: 0.92rem/1.55 ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+      white-space: pre;
+    }
+
+    .yaml-line {
+      display: block;
+      min-height: 1.55em;
+    }
+
+    .yaml-section {
+      display: block;
+      margin: 10px -16px 4px;
+      padding: 6px 16px;
+      border-top: 1px solid #dce7f2;
+      border-bottom: 1px solid #dce7f2;
+      background: #eef6fd;
+      color: #0d5f9f;
+      font-weight: 800;
+    }
+
+    .yaml-key {
+      color: #125f9f;
+      font-weight: 750;
+    }
+
+    .yaml-value {
+      color: #7a3e00;
+      font-weight: 650;
+    }
+
+    .yaml-comment {
+      color: #687782;
+      font-style: italic;
+    }
+
+    .yaml-option {
+      color: #2f7d32;
+      font-weight: 700;
+      font-style: normal;
+    }
+
+    .yaml-list-marker {
+      color: #8a4fb3;
+      font-weight: 800;
+    }
+
+    .empty {
+      display: grid;
+      min-height: 300px;
+      place-items: center;
+      color: var(--muted);
+      text-align: center;
+    }
+
+    @media (max-width: 760px) {
+      main {
+        width: min(100% - 20px, 1180px);
+      }
+
+      header,
+      .toolbar {
+        grid-template-columns: 1fr;
+      }
+
+      header {
+        align-items: flex-start;
+      }
+
+      .details {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <header>
+      <div>
+        <h1>Config Preview</h1>
+        <p>Select a project config or saved run config and inspect it directly in the browser.</p>
+      </div>
+      <nav class="nav" aria-label="Viewer navigation">
+        <a class="button" href="/">Home</a>
+        <a class="button" href="/training">Training</a>
+        <a class="button" href="/inference">Inference</a>
+      </nav>
+    </header>
+
+    <section class="toolbar" aria-label="Config controls">
+      <label for="config-select">
+        Config file
+        <select id="config-select"></select>
+      </label>
+      <a id="open-raw" class="button primary" href="#" target="_blank" rel="noreferrer">Open Raw</a>
+    </section>
+
+    <section class="details" aria-label="Config metadata">
+      <div class="detail">
+        <span>Name</span>
+        <strong id="detail-name">-</strong>
+      </div>
+      <div class="detail">
+        <span>Source</span>
+        <strong id="detail-source">-</strong>
+      </div>
+      <div class="detail">
+        <span>Path</span>
+        <strong id="detail-path">-</strong>
+      </div>
+      <div class="detail">
+        <span>Updated</span>
+        <strong id="detail-updated">-</strong>
+      </div>
+    </section>
+
+    <section class="viewer" aria-label="YAML preview">
+      <div class="viewer-head">
+        <h2 id="preview-title">Preview</h2>
+        <p id="status-text">Loading configs...</p>
+      </div>
+      <pre id="preview" aria-live="polite"></pre>
+    </section>
+  </main>
+
+  <script>
+    const select = document.getElementById("config-select");
+    const preview = document.getElementById("preview");
+    const statusText = document.getElementById("status-text");
+    const previewTitle = document.getElementById("preview-title");
+    const openRaw = document.getElementById("open-raw");
+    const details = {
+      name: document.getElementById("detail-name"),
+      source: document.getElementById("detail-source"),
+      path: document.getElementById("detail-path"),
+      updated: document.getElementById("detail-updated"),
+    };
+
+    function queryPath() {
+      return new URLSearchParams(window.location.search).get("path") || "";
+    }
+
+    function formatTime(seconds) {
+      if (!seconds) {
+        return "-";
+      }
+      return new Date(seconds * 1000).toLocaleString();
+    }
+
+    function optionLabel(item) {
+      return item.source === "runs"
+        ? `run: ${item.name}`
+        : `config: ${item.name}`;
+    }
+
+    function setDetails(config) {
+      details.name.textContent = config.name || "-";
+      details.source.textContent = config.source || "-";
+      details.path.textContent = config.path || "-";
+      details.updated.textContent = formatTime(config.mtime);
+      previewTitle.textContent = config.name || "Preview";
+      openRaw.href = `/${config.path}`;
+    }
+
+    function escapeHtml(value) {
+      return String(value)
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#039;");
+    }
+
+    function highlightComment(comment) {
+      const escaped = escapeHtml(comment);
+      return escaped.replace(
+        /(\b[a-zA-Z0-9_./-]+\b)(\s*:)/g,
+        '<span class="yaml-option">$1</span>$2'
+      );
+    }
+
+    function highlightYamlLine(line) {
+      if (!line.trim()) {
+        return '<span class="yaml-line"></span>';
+      }
+
+      const indent = line.match(/^\s*/)[0];
+      const body = line.slice(indent.length);
+      const escapedIndent = escapeHtml(indent);
+
+      if (body.startsWith("#")) {
+        return `<span class="yaml-line"><span class="yaml-comment">${highlightComment(body)}</span></span>`;
+      }
+
+      const listMatch = body.match(/^(-\s+)([^:#]+)(:\s*)(.*)$/);
+      if (listMatch) {
+        return [
+          '<span class="yaml-line">',
+          escapedIndent,
+          '<span class="yaml-list-marker">', escapeHtml(listMatch[1]), '</span>',
+          '<span class="yaml-key">', escapeHtml(listMatch[2]), '</span>',
+          escapeHtml(listMatch[3]),
+          '<span class="yaml-value">', escapeHtml(listMatch[4]), '</span>',
+          '</span>',
+        ].join("");
+      }
+
+      const keyMatch = body.match(/^([^:#]+)(:\s*)(.*)$/);
+      if (keyMatch) {
+        const isSection = !indent && !keyMatch[3].trim();
+        const className = isSection ? "yaml-section" : "yaml-line";
+        return [
+          `<span class="${className}">`,
+          escapedIndent,
+          '<span class="yaml-key">', escapeHtml(keyMatch[1]), '</span>',
+          escapeHtml(keyMatch[2]),
+          '<span class="yaml-value">', escapeHtml(keyMatch[3]), '</span>',
+          '</span>',
+        ].join("");
+      }
+
+      return `<span class="yaml-line">${escapeHtml(line)}</span>`;
+    }
+
+    function renderYaml(text) {
+      preview.className = "";
+      preview.innerHTML = String(text || "")
+        .split("\n")
+        .map(highlightYamlLine)
+        .join("");
+    }
+
+    async function loadConfig(path) {
+      statusText.textContent = "Loading...";
+      preview.textContent = "";
+      const response = await fetch(`/api/config?path=${encodeURIComponent(path)}`);
+      const payload = await response.json();
+      if (!response.ok || payload.error) {
+        throw new Error(payload.error || "Unable to load config.");
+      }
+      setDetails(payload);
+      renderYaml(payload.text || "");
+      statusText.textContent = "Previewing YAML";
+      const url = new URL(window.location.href);
+      url.searchParams.set("path", payload.path);
+      window.history.replaceState({}, "", url);
+    }
+
+    async function loadConfigList() {
+      const response = await fetch("/api/configs");
+      const payload = await response.json();
+      if (!response.ok || payload.error) {
+        throw new Error(payload.error || "Unable to list configs.");
+      }
+
+      const configs = payload.configs || [];
+      select.innerHTML = "";
+      if (!configs.length) {
+        preview.innerHTML = "";
+        preview.className = "empty";
+        preview.textContent = "No YAML config files were found.";
+        statusText.textContent = "No configs";
+        return;
+      }
+
+      for (const item of configs) {
+        const option = document.createElement("option");
+        option.value = item.path;
+        option.textContent = optionLabel(item);
+        select.appendChild(option);
+      }
+
+      const requested = queryPath();
+      const initial = configs.find((item) => item.path === requested)?.path || configs[0].path;
+      select.value = initial;
+      await loadConfig(initial);
+    }
+
+    select.addEventListener("change", () => {
+      loadConfig(select.value).catch((error) => {
+        statusText.textContent = "Error";
+        preview.textContent = error.message;
+      });
+    });
+
+    loadConfigList().catch((error) => {
+      statusText.textContent = "Error";
+      preview.textContent = error.message;
+    });
+  </script>
+</body>
+</html>

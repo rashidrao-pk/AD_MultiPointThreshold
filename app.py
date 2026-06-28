@@ -17,6 +17,7 @@ import yaml
 ROOT = Path(__file__).resolve().parent
 RUNS_ROOT = ROOT / "results" / "runs"
 EXPERIMENTS_ROOT = ROOT / "results" / "experiments"
+CONFIGS_ROOT = ROOT / "configs"
 DEFAULT_HOST = "127.0.0.1"
 DEFAULT_PORT = 8000
 
@@ -131,6 +132,64 @@ def list_experiments():
         }
         for path in sorted(experiments, key=lambda item: item.stat().st_mtime, reverse=True)
     ]
+
+
+def list_config_files():
+    """Return project and saved-run YAML config files."""
+    configs = []
+    if CONFIGS_ROOT.exists():
+        for path in sorted(CONFIGS_ROOT.glob("*.yaml")):
+            configs.append(
+                {
+                    "name": path.name,
+                    "path": _relative_to_root(path),
+                    "source": "configs",
+                    "mtime": path.stat().st_mtime,
+                }
+            )
+
+    if RUNS_ROOT.exists():
+        for path in sorted(RUNS_ROOT.glob("*/config.yaml"), key=lambda item: item.stat().st_mtime, reverse=True):
+            configs.append(
+                {
+                    "name": f"{path.parent.name}/config.yaml",
+                    "path": _relative_to_root(path),
+                    "source": "runs",
+                    "mtime": path.stat().st_mtime,
+                }
+            )
+    return configs
+
+
+def _safe_config_path(config_path):
+    """Resolve a config path under configs or saved training runs."""
+    path = _safe_run_path(config_path)
+    allowed_configs = CONFIGS_ROOT.resolve()
+    allowed_runs = RUNS_ROOT.resolve()
+    if path.suffix.lower() not in {".yaml", ".yml"}:
+        raise ValueError("Config path must be a YAML file.")
+    if (
+        (allowed_configs not in path.parents and path != allowed_configs)
+        and allowed_runs not in path.parents
+    ):
+        raise ValueError("Config path must be inside configs/ or results/runs/.")
+    return path
+
+
+def read_config_file(config_path):
+    """Read a YAML config file as text and parsed data."""
+    path = _safe_config_path(config_path)
+    text = path.read_text(encoding="utf-8")
+    parsed = yaml.safe_load(text) or {}
+    is_run_config = RUNS_ROOT.resolve() in path.parents
+    return {
+        "name": f"{path.parent.name}/{path.name}" if is_run_config else path.name,
+        "path": _relative_to_root(path),
+        "source": "runs" if is_run_config else "configs",
+        "text": text,
+        "parsed": parsed,
+        "mtime": path.stat().st_mtime,
+    }
 
 
 def inference_plot_status(run_path):
@@ -307,10 +366,17 @@ class TrainingViewerHandler(SimpleHTTPRequestHandler):
         if parsed.path == "/inference":
             self.path = "/app/inference.html"
             return super().do_GET()
+        if parsed.path == "/config":
+            self.path = "/app/configs.html"
+            return super().do_GET()
         if parsed.path == "/api/runs":
             return _json_response(self, {"runs": list_runs()})
         if parsed.path == "/api/experiments":
             return _json_response(self, {"experiments": list_experiments()})
+        if parsed.path == "/api/configs":
+            return _json_response(self, {"configs": list_config_files()})
+        if parsed.path == "/api/config":
+            return self._handle_config(parsed)
         if parsed.path == "/api/inference_status":
             return self._handle_inference_status(parsed)
         if parsed.path == "/api/epochs":
@@ -368,6 +434,14 @@ class TrainingViewerHandler(SimpleHTTPRequestHandler):
         try:
             run_path = _safe_run_path(query.get("run", [""])[0])
             return _json_response(self, inference_plot_status(run_path))
+        except Exception as exc:
+            return _json_response(self, {"error": str(exc)}, status=400)
+
+    def _handle_config(self, parsed):
+        """Return one YAML config file for browser preview."""
+        query = parse_qs(parsed.query)
+        try:
+            return _json_response(self, read_config_file(query.get("path", [""])[0]))
         except Exception as exc:
             return _json_response(self, {"error": str(exc)}, status=400)
 
