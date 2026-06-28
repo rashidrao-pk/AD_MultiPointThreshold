@@ -78,7 +78,7 @@
 
       .fields {
         display: grid;
-        grid-template-columns: minmax(260px, 1fr) 120px 120px;
+        grid-template-columns: minmax(260px, 1fr) minmax(260px, 1fr) 120px;
         gap: 12px;
         align-items: end;
       }
@@ -92,7 +92,8 @@
       }
 
       input[type="text"],
-      input[type="number"] {
+      input[type="number"],
+      select {
         width: 100%;
         height: 38px;
         border: 1px solid var(--line);
@@ -228,6 +229,89 @@
         font-size: 1.05rem;
       }
 
+      .model-details {
+        border: 1px solid var(--line);
+        border-radius: 6px;
+        background: #f8fafc;
+      }
+
+      .model-details summary {
+        cursor: pointer;
+        padding: 11px 12px;
+        color: var(--ink);
+        font-weight: 750;
+      }
+
+      .details-grid {
+        display: grid;
+        grid-template-columns: repeat(12, minmax(0, 1fr));
+        gap: 10px;
+        padding: 0 12px 12px;
+      }
+
+      .detail-item {
+        display: grid;
+        grid-column: span 2;
+        gap: 4px;
+        min-height: 58px;
+        padding: 9px;
+        border: 1px solid var(--line);
+        border-radius: 6px;
+        background: #fff;
+      }
+
+      .detail-item.compact {
+        grid-column: span 1;
+      }
+
+      .detail-item.wide {
+        grid-column: span 4;
+      }
+
+      .detail-item.xwide {
+        grid-column: span 6;
+      }
+
+      .detail-item.xxwide {
+        grid-column: span 8;
+      }
+
+      .detail-item.important {
+        border-color: rgba(17, 103, 177, 0.42);
+        background: #eef6fd;
+        box-shadow: inset 3px 0 0 var(--accent);
+      }
+
+      .detail-item span {
+        color: var(--muted);
+        font-size: 0.74rem;
+        font-weight: 750;
+        text-transform: uppercase;
+      }
+
+      .detail-item strong {
+        overflow-wrap: anywhere;
+        font-size: 0.9rem;
+      }
+
+      .detail-pair {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 8px;
+      }
+
+      .detail-pair div {
+        display: grid;
+        gap: 2px;
+      }
+
+      .detail-pair em {
+        color: var(--muted);
+        font-size: 0.72rem;
+        font-style: normal;
+        font-weight: 700;
+      }
+
       .live-dot {
         display: inline-block;
         width: 9px;
@@ -250,6 +334,37 @@
         background: #fff;
       }
 
+      .tab-notes {
+        border: 1px solid var(--line);
+        border-radius: 6px;
+        background: #f8fafc;
+      }
+
+      .tab-notes summary {
+        cursor: pointer;
+        padding: 11px 12px;
+        color: var(--ink);
+        font-weight: 750;
+      }
+
+      .tab-notes-body {
+        display: grid;
+        gap: 10px;
+        padding: 0 12px 12px;
+        color: var(--muted);
+        font-size: 0.92rem;
+        line-height: 1.5;
+      }
+
+      .tab-notes-body p {
+        margin: 0;
+      }
+
+      .tab-notes-body ul {
+        margin: 0;
+        padding-left: 20px;
+      }
+
       @media (max-width: 820px) {
         header {
           align-items: flex-start;
@@ -267,6 +382,18 @@
 
         .metrics {
           grid-template-columns: 1fr 1fr;
+        }
+
+        .details-grid {
+          grid-template-columns: 1fr;
+        }
+
+        .detail-item,
+        .detail-item.compact,
+        .detail-item.wide,
+        .detail-item.xwide,
+        .detail-item.xxwide {
+          grid-column: span 1;
         }
       }
     </style>
@@ -297,10 +424,6 @@
           <label>
             Max epoch
             <input id="maxEpoch" type="number" min="1" value="360" />
-          </label>
-          <label>
-            Plot every
-            <input id="plotEvery" type="number" min="1" value="5" />
           </label>
         </div>
 
@@ -335,6 +458,10 @@
             <strong id="discMetric">-</strong>
           </div>
         </div>
+        <details class="model-details" id="modelDetails">
+          <summary>Model details</summary>
+          <div class="details-grid" id="modelDetailsGrid"></div>
+        </details>
       </section>
 
       <section class="viewer">
@@ -378,6 +505,10 @@
             <img id="plotImage" alt="Training plot" />
             <div id="missingMessage" class="missing"></div>
           </div>
+          <details class="tab-notes" id="tabNotes">
+            <summary id="tabNotesTitle">About this plot</summary>
+            <div class="tab-notes-body" id="tabNotesBody"></div>
+          </details>
         </div>
       </section>
     </main>
@@ -388,46 +519,100 @@
           title: "Training Curves",
           folder: "plots/training_curves",
           prefix: "training_curves_epoch_",
+          notesTitle: "About training curves",
+          notes: [
+            "Training curves show how the optimization losses change over epochs. They are useful for spotting divergence, collapse, overfitting, or whether training has mostly plateaued.",
+            "For this VAE-GAN, reconstruction and validation reconstruction losses measure image fidelity, VAE loss is the weighted generator objective, and discriminator loss shows how well the discriminator separates real images from reconstructions.",
+            "Lower loss is not always better for anomaly detection. The score-distribution and quality-metrics tabs are better indicators of whether normal and anomalous samples are separating."
+          ],
         },
         latent: {
           title: "Latent Space",
           folder: "plots/latent_space",
           prefix: "latent_space_epoch_",
+          notesTitle: "About latent space",
+          notes: [
+            "Latent-space plots show the encoder output projected to two dimensions with PCA or t-SNE. They help you see whether normal samples become compact and whether anomalous samples drift away.",
+            "Overlap between normal and anomalous points is common for reconstruction-based models, especially when defects are small. The model may still detect anomalies through reconstruction error even if latent clusters overlap.",
+            "When using normal-center or SVDD losses, this tab should show whether normal latent codes become more compact over time."
+          ],
         },
         evolution: {
           title: "Evolution",
           folder: "plots/training_evolution",
           prefix: "training_evolution_epoch_",
+          notesTitle: "About evolution",
+          notes: [
+            "Evolution plots show fixed and random normal samples across training: input, reconstruction, and anomaly map. This makes reconstruction behavior visible instead of only numeric.",
+            "Good training usually improves object structure and reduces normal reconstruction error. Bad training may produce blurry reconstructions, background artifacts, or anomaly maps that stay bright on normal regions.",
+            "The discriminator interpolation block shows decoded samples along a latent path and the discriminator response, which helps diagnose whether the generator is learning a coherent image manifold."
+          ],
         },
         scores: {
           title: "Score Distribution",
           folder: "plots/score_distribution",
           prefix: "score_distribution_epoch_",
+          notesTitle: "About score distribution",
+          notes: [
+            "Score distribution compares reconstruction-error anomaly scores for normal and anomalous samples. The histogram shows sample density, and the KDE curve gives a smoothed view of the distribution.",
+            "The goal is not just low normal scores; the important signal is separation. A useful model should push anomalous scores higher than normal scores.",
+            "If the two distributions overlap heavily, thresholding will be difficult even if training loss looks good."
+          ],
         },
         quality: {
           title: "Quality Metrics",
           folder: "plots/quality_metrics",
           prefix: "quality_metrics_epoch_",
+          notesTitle: "About quality metrics",
+          notes: [
+            "Quality metrics summarize anomaly-detection behavior over epochs. AUROC and AUPRC measure ranking quality using validation/test labels.",
+            "Score gap is the difference between anomalous and normal mean scores. A growing positive gap usually means better separation.",
+            "TPR at fixed FPR shows how many anomalies are caught when false alarms are constrained. Threshold stability shows whether normal-score thresholds are settling or moving unpredictably."
+          ],
         },
         components: {
           title: "Score Components",
           folder: "plots/score_components",
           prefix: "score_components_epoch_",
+          notesTitle: "About score components",
+          notes: [
+            "Score components compare different anomaly-score signals: L1, L2, MSE, max-pixel reconstruction error, and discriminator score.",
+            "This helps identify which score actually separates normal from anomalous samples. Sometimes max-pixel score catches local defects better than mean reconstruction error.",
+            "Use this tab to decide which scoring method should be used during inference and thresholding."
+          ],
         },
         radius: {
           title: "Latent Radius",
           folder: "plots/latent_radius",
           prefix: "latent_radius_epoch_",
+          notesTitle: "About latent radius",
+          notes: [
+            "Latent radius is the squared distance of each encoded sample from the latent center. It is especially useful when normal-center or SVDD-style losses are enabled.",
+            "A healthy compactness loss should make normal samples concentrate at smaller radii. Anomalous samples may remain farther away if the latent representation is useful.",
+            "If both groups collapse to the same radius, the latent compactness loss may be too strong or not discriminative enough on its own."
+          ],
         },
         loss_balance: {
           title: "Loss Balance",
           folder: "plots/loss_balance",
           prefix: "loss_balance_epoch_",
+          notesTitle: "About loss balance",
+          notes: [
+            "Loss balance shows the weighted contribution of each objective term: reconstruction, KL, GAN, normal-center, SVDD, and discriminator loss.",
+            "This is important because a term can be present but numerically irrelevant, or it can dominate and hurt reconstruction quality.",
+            "When tuning beta values, use this tab to check whether the new loss term is active at a reasonable scale compared with reconstruction and GAN losses."
+          ],
         },
         validation: {
           title: "Validation Grid",
           folder: "plots/validation_quality",
           prefix: "validation_quality_epoch_",
+          notesTitle: "About validation grid",
+          notes: [
+            "Validation grid shows representative normal and anomalous examples with input, reconstruction, anomaly map, and score.",
+            "It is the fastest way to inspect failure modes: missed defects, over-smoothed reconstructions, false anomaly regions, or background-driven errors.",
+            "Use this together with quality metrics. Metrics tell you whether performance changed; the grid helps explain why."
+          ],
         },
       };
 
@@ -443,7 +628,6 @@
       const runPath = document.getElementById("runPath");
       const runSelect = document.getElementById("runSelect");
       const maxEpoch = document.getElementById("maxEpoch");
-      const plotEvery = document.getElementById("plotEvery");
       const epochSlider = document.getElementById("epochSlider");
       const epochLabel = document.getElementById("epochLabel");
       const refreshButton = document.getElementById("refreshButton");
@@ -455,11 +639,14 @@
       const reconMetric = document.getElementById("reconMetric");
       const valReconMetric = document.getElementById("valReconMetric");
       const discMetric = document.getElementById("discMetric");
+      const modelDetailsGrid = document.getElementById("modelDetailsGrid");
       const plotlyPanel = document.getElementById("plotlyPanel");
       const tabTitle = document.getElementById("tabTitle");
       const imagePath = document.getElementById("imagePath");
       const plotImage = document.getElementById("plotImage");
       const missingMessage = document.getElementById("missingMessage");
+      const tabNotesTitle = document.getElementById("tabNotesTitle");
+      const tabNotesBody = document.getElementById("tabNotesBody");
       const tabButtons = Array.from(document.querySelectorAll("[data-tab]"));
 
       function padEpoch(epoch) {
@@ -532,16 +719,7 @@
 
       function buildEpochs() {
         const maxValue = Math.max(parseInt(maxEpoch.value || "1", 10), 1);
-        const stepValue = Math.max(parseInt(plotEvery.value || "1", 10), 1);
-        const values = [1];
-        for (let epoch = stepValue; epoch <= maxValue; epoch += stepValue) {
-          if (!values.includes(epoch)) {
-            values.push(epoch);
-          }
-        }
-        if (!values.includes(maxValue)) {
-          values.push(maxValue);
-        }
+        const values = Array.from({ length: maxValue }, (_, index) => index + 1);
         state.epochs = values.sort((a, b) => a - b);
         epochSlider.max = String(state.epochs.length - 1);
         epochSlider.value = String(
@@ -603,6 +781,13 @@
         plotImage.src = src;
         plotImage.alt = `${tab.title} at epoch ${epoch}`;
         plotlyPanel.style.display = state.tab === "curves" ? "block" : "none";
+        tabNotesTitle.textContent = tab.notesTitle || `About ${tab.title}`;
+        tabNotesBody.innerHTML = "";
+        (tab.notes || []).forEach((text) => {
+          const paragraph = document.createElement("p");
+          paragraph.textContent = text;
+          tabNotesBody.appendChild(paragraph);
+        });
       }
 
       function numberText(value) {
@@ -614,6 +799,100 @@
           return String(value);
         }
         return parsed.toFixed(6);
+      }
+
+      function valueText(value) {
+        if (value === undefined || value === null || value === "") {
+          return "-";
+        }
+        if (typeof value === "number") {
+          return Number.isInteger(value) ? String(value) : value.toPrecision(8).replace(/\.?0+($|e)/, "$1");
+        }
+        const parsed = Number(value);
+        if (Number.isFinite(parsed) && String(value).trim() !== "") {
+          return Number.isInteger(parsed)
+            ? String(parsed)
+            : parsed.toPrecision(8).replace(/\.?0+($|e)/, "$1");
+        }
+        return String(value);
+      }
+
+      function detailValue(config, path, fallback = "-") {
+        return path.reduce((current, key) => {
+          if (current && Object.prototype.hasOwnProperty.call(current, key)) {
+            return current[key];
+          }
+          return undefined;
+        }, config) ?? fallback;
+      }
+
+      function addDetail(label, value, size = "") {
+        const item = document.createElement("div");
+        item.className = `detail-item ${size}`.trim();
+        const key = document.createElement("span");
+        key.textContent = label;
+        const val = document.createElement("strong");
+        val.textContent = valueText(value);
+        item.appendChild(key);
+        item.appendChild(val);
+        modelDetailsGrid.appendChild(item);
+      }
+
+      function addDetailPair(label, leftLabel, leftValue, rightLabel, rightValue, size = "wide") {
+        const item = document.createElement("div");
+        item.className = `detail-item ${size}`.trim();
+        const key = document.createElement("span");
+        key.textContent = label;
+        const pair = document.createElement("div");
+        pair.className = "detail-pair";
+        [[leftLabel, leftValue], [rightLabel, rightValue]].forEach(([name, value]) => {
+          const cell = document.createElement("div");
+          const subkey = document.createElement("em");
+          subkey.textContent = name;
+          const subval = document.createElement("strong");
+          subval.textContent = valueText(value);
+          cell.appendChild(subkey);
+          cell.appendChild(subval);
+          pair.appendChild(cell);
+        });
+        item.appendChild(key);
+        item.appendChild(pair);
+        modelDetailsGrid.appendChild(item);
+      }
+
+      function renderModelDetails(payload) {
+        const details = payload.run_details || {};
+        const config = details.config || {};
+        if (!Object.keys(config).length) {
+          return;
+        }
+        const latest = payload.latest_metrics || {};
+
+        modelDetailsGrid.innerHTML = "";
+        addDetail("Dataset", `${detailValue(config, ["data", "name"])} / ${detailValue(config, ["data", "category"])}`);
+        addDetail("Model", detailValue(config, ["model", "name"]));
+        addDetail("Latent dim", detailValue(config, ["model", "latent_dim"]), "compact");
+        addDetail("Pretrained", detailValue(config, ["model", "pretrained"]));
+        addDetail("Device", detailValue(config, ["device"]), "compact");
+        addDetail("Epochs", `${valueText(latest.epoch || payload.history_rows)} / ${valueText(detailValue(config, ["training", "epochs"]))}`);
+        addDetail("Batch size", detailValue(config, ["data", "batch_size"]), "compact");
+        addDetail("Image size", detailValue(config, ["data", "img_size"]), "compact");
+        addDetail("Augmentation", detailValue(config, ["data", "augmentation"]));
+        addDetail("Recon loss", detailValue(config, ["model", "recon_loss"]), "important");
+        addDetail("Adversarial loss", detailValue(config, ["model", "adversarial_loss"]), "important");
+        addDetailPair(
+          "Learning rates",
+          "Encoder/decoder",
+          detailValue(config, ["training", "learning_rate_enc_dec"]),
+          "Discriminator",
+          detailValue(config, ["training", "learning_rate_dis"]),
+          "wide important",
+        );
+        addDetail("Beta KL", detailValue(config, ["training", "beta_kl"]), "compact");
+        addDetail("Beta GAN", detailValue(config, ["training", "beta_gan"]), "compact");
+        addDetail("Beta center", detailValue(config, ["training", "beta_center"]), "compact");
+        addDetail("Beta SVDD", detailValue(config, ["training", "beta_svdd"]), "compact");
+        addDetail("Checkpoint root", detailValue(config, ["model", "checkpoint_root"]), "xxwide");
       }
 
       function updateMetricCards(payload) {
@@ -629,6 +908,9 @@
           liveStatus.textContent = "No training files found yet.";
         } else {
           liveStatus.textContent = `${isLive ? "Training appears live" : "No recent write"}; last update ${Math.round(seconds)}s ago.`;
+        }
+        if (payload.run_details) {
+          renderModelDetails(payload);
         }
       }
 
@@ -755,7 +1037,6 @@
       refreshButton.addEventListener("click", () => refreshLiveEpochs(false));
       liveButton.addEventListener("click", () => setLiveMode(!state.live));
       maxEpoch.addEventListener("change", refreshEpochs);
-      plotEvery.addEventListener("change", refreshEpochs);
       runPath.addEventListener("change", () => {
         syncSelectedRun();
         state.epochsByTab = {};

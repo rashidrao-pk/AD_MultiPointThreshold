@@ -266,6 +266,11 @@ def parse_args():
         help="Save reconstruction-score distribution plots during training.",
     )
     parser.add_argument(
+        "--plot_quality",
+        action="store_true",
+        help="Save training-quality plots such as AUROC, score components, latent radius, and validation grids.",
+    )
+    parser.add_argument(
         "--latent_space_classes",
         choices=["normal", "both"],
         default="normal",
@@ -369,7 +374,7 @@ def _run_training_for_model(args, project_root, config_path, base_config, model_
         return None
 
     training_plotter = None
-    if args.plot_curves or args.plot_latent_space or args.plot_score_distribution:
+    if args.plot_curves or args.plot_latent_space or args.plot_score_distribution or args.plot_quality:
         from modules.plotting import TrainingPlotter
 
         training_plotter = TrainingPlotter(
@@ -377,6 +382,7 @@ def _run_training_for_model(args, project_root, config_path, base_config, model_
             plot_curves=args.plot_curves,
             plot_latent_space=args.plot_latent_space,
             plot_score_distribution=args.plot_score_distribution,
+            plot_quality=args.plot_quality,
             latent_space_classes=args.latent_space_classes,
             latent_projection=args.latent_projection,
             plot_every=args.plot_every,
@@ -389,7 +395,8 @@ def _run_training_for_model(args, project_root, config_path, base_config, model_
             f"latent={args.plot_latent_space} "
             f"latent_classes={args.latent_space_classes} "
             f"latent_projection={args.latent_projection} "
-            f"score_distribution={args.plot_score_distribution}"
+            f"score_distribution={args.plot_score_distribution} "
+            f"quality={args.plot_quality}"
         )
 
     result = trainer(

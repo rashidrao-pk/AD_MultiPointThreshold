@@ -11,6 +11,8 @@ from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from urllib.parse import parse_qs, unquote, urlparse
 
+import yaml
+
 
 ROOT = Path(__file__).resolve().parent
 RUNS_ROOT = ROOT / "results" / "runs"
@@ -129,6 +131,65 @@ def read_loss_history(run_path):
         return list(csv.DictReader(handle))
 
 
+def read_run_config(run_path):
+    """Read the config.yaml saved inside a training run directory."""
+    path = run_path / "config.yaml"
+    if not path.exists():
+        return {}
+
+    with open(path, "r", encoding="utf-8") as handle:
+        return yaml.safe_load(handle) or {}
+
+
+def _read_csv_rows(path):
+    """Read CSV rows from a file if it exists."""
+    if not path.exists():
+        return []
+
+    with open(path, "r", newline="", encoding="utf-8") as handle:
+        return list(csv.DictReader(handle))
+
+
+def find_run_record(run_path):
+    """Find the training-run registry row matching a run directory."""
+    run_dir = str(run_path.resolve())
+    candidates = [
+        ROOT / "results" / "training_runs.csv",
+        ROOT / "results" / "runs.csv",
+    ]
+    for path in candidates:
+        for row in _read_csv_rows(path):
+            row_run_dir = row.get("run_dir") or row.get("path") or ""
+            if row_run_dir and str(Path(row_run_dir).resolve()) == run_dir:
+                return row
+    return {}
+
+
+def checkpoint_summary(run_path):
+    """Return basic checkpoint file locations and modification times for a run."""
+    items = {}
+    for name in ("model_best.pt", "model_last.pt"):
+        path = run_path / name
+        if path.exists():
+            items[name] = {
+                "path": _relative_to_root(path),
+                "mtime": path.stat().st_mtime,
+                "size_mb": round(path.stat().st_size / (1024 * 1024), 2),
+            }
+    return items
+
+
+def run_details(run_path):
+    """Build model, data, training, and checkpoint details for a run."""
+    config = read_run_config(run_path)
+    record = find_run_record(run_path)
+    return {
+        "config": config,
+        "record": record,
+        "checkpoints": checkpoint_summary(run_path),
+    }
+
+
 def run_status(run_path):
     """Build a live status payload from run files."""
     epochs = {
@@ -151,6 +212,7 @@ def run_status(run_path):
 
     return {
         "run": _relative_to_root(run_path),
+        "run_details": run_details(run_path),
         "epochs": epochs,
         "latest": {
             tab: values[-1] if values else None
@@ -211,6 +273,7 @@ class TrainingViewerHandler(SimpleHTTPRequestHandler):
                 self,
                 {
                     "run": _relative_to_root(run_path),
+                    "run_details": run_details(run_path),
                     "epochs": epochs,
                     "latest": {
                         tab: values[-1] if values else None
