@@ -22,6 +22,15 @@ Override config values from CLI without editing YAML:
 # Friendly shortcut for MVTec object/category
 python -m experiments.run_vaegan --config configs/mvtec_mac.yaml --category zipper --force
 
+# Run every known MVTec object with the same config template
+python -m experiments.run_vaegan --config configs/mvtec_mac.yaml --dataset MVTec --force
+
+# Run one category while also overriding the dataset name
+python -m experiments.run_vaegan --config configs/mvtec_mac.yaml --dataset MVTec --category zipper --force
+
+# Run every known Cobots safety area
+python -m experiments.run_vaegan --config configs/cobots_mac.yaml --dataset Cobots_Synthetic --force
+
 # Generic dotted-key overrides; can be repeated
 python -m experiments.run_vaegan --config configs/mvtec_mac.yaml --force \
   --set data.category=hazelnut \

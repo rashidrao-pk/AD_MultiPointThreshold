@@ -33,6 +33,45 @@ from utils.general import namespace_to_dict
 
 TRAIN_RUNS_CSV = "training_runs.csv"
 
+DATASET_ALIASES = {
+    "mvtec": "MVTec",
+    "mvtex": "MVTec",
+    "mvtec_ad": "MVTec",
+    "mvtec-ad": "MVTec",
+    "mvtec_anomaly_detection": "MVTec",
+    "cobot": "Cobots_Synthetic",
+    "cobots": "Cobots_Synthetic",
+    "cobots_synthetic": "Cobots_Synthetic",
+    "distrimuse": "Cobots_Synthetic",
+    "distrimuse_unigra": "Cobots_Synthetic",
+    "robotics_hazards": "Robotics_Hazards",
+    "robotics-hazards": "Robotics_Hazards",
+    "hazards": "Robotics_Hazards",
+    "corridor": "Robotics_Hazards",
+}
+
+DATASET_CATEGORIES = {
+    "MVTec": [
+        "bottle",
+        "cable",
+        "capsule",
+        "carpet",
+        "grid",
+        "hazelnut",
+        "leather",
+        "metal_nut",
+        "pill",
+        "screw",
+        "tile",
+        "toothbrush",
+        "transistor",
+        "wood",
+        "zipper",
+    ],
+    "Cobots_Synthetic": ["PLeft", "PRight", "ConvBelt", "RoboArm"],
+    "Robotics_Hazards": ["corridor"],
+}
+
 
 def _repo_root():
     """Return the repository root for path resolution."""
@@ -42,6 +81,26 @@ def _repo_root():
 def _namespace_set(obj, name, value):
     """Set an attribute on a namespace-style object."""
     setattr(obj, name, value)
+
+
+def _normalize_dataset_name(dataset):
+    """Return the canonical dataset name used by configs and data loaders."""
+    if dataset is None:
+        return None
+
+    key = str(dataset).strip()
+    return DATASET_ALIASES.get(key.lower(), key)
+
+
+def _known_categories(dataset):
+    """Return known categories/areas for a supported dataset."""
+    dataset = _normalize_dataset_name(dataset)
+    if dataset not in DATASET_CATEGORIES:
+        raise ValueError(
+            f"Unknown dataset for training sweep: {dataset}. "
+            f"Supported: {', '.join(DATASET_CATEGORIES)}"
+        )
+    return DATASET_CATEGORIES[dataset]
 
 
 def _resolve_config_path(config_arg, project_root):
@@ -239,9 +298,20 @@ def parse_args():
     parser.add_argument("--device", default=None, help="Override config.device.")
     parser.add_argument("--suffix", default="", help="Optional run-directory suffix.")
     parser.add_argument(
+        "--dataset",
+        default=None,
+        help=(
+            "Override data.name and train every known category for that dataset "
+            "unless --category selects one category. Examples: MVTec, Cobots_Synthetic."
+        ),
+    )
+    parser.add_argument(
         "--category",
         default=None,
-        help="Override data.category, for example --category zipper.",
+        help=(
+            "Override data.category, for example --category zipper. "
+            "Use --category all with --dataset to train all known categories."
+        ),
     )
     parser.add_argument(
         "--dataset-root",
@@ -329,7 +399,9 @@ def _config_overrides_from_args(args):
     """Collect config overrides from friendly CLI flags and generic --set values."""
     overrides = list(args.set_overrides)
 
-    if args.category is not None:
+    if args.dataset is not None:
+        overrides.append(f"data.name={_normalize_dataset_name(args.dataset)}")
+    if args.category is not None and str(args.category).lower() != "all":
         overrides.append(f"data.category={args.category}")
     if args.dataset_root is not None:
         overrides.append(f"data.dataset_root={args.dataset_root}")
@@ -341,6 +413,19 @@ def _config_overrides_from_args(args):
         overrides.append(f"training.epochs={args.epochs}")
 
     return overrides
+
+
+def _category_sweep(config, args):
+    """Return categories to sweep, or an empty list for single-category training."""
+    category = str(args.category).lower() if args.category is not None else None
+
+    if category == "all":
+        return _known_categories(args.dataset or config.data.name)
+
+    if args.dataset is not None and args.category is None:
+        return _known_categories(args.dataset)
+
+    return []
 
 
 def dispatch_trainer(config):
@@ -498,6 +583,24 @@ def main():
 
     model_names = _selected_model_names(base_config, args.model)
     print(f"[models] selected={', '.join(model_names)}")
+
+    categories = _category_sweep(base_config, args)
+    if categories:
+        total = len(categories) * len(model_names)
+        completed = 0
+        for category in categories:
+            category_config = copy.deepcopy(base_config)
+            _namespace_set(category_config.data, "category", category)
+            print("=" * 80)
+            print(f"[sweep] dataset={category_config.data.name} category={category}")
+            print("=" * 80)
+            for model_name in model_names:
+                _run_training_for_model(args, project_root, config_path, category_config, model_name)
+                completed += 1
+        print("=" * 80)
+        print(f"[sweep] completed {completed}/{total} training jobs")
+        print("=" * 80)
+        return
 
     for model_name in model_names:
         _run_training_for_model(args, project_root, config_path, base_config, model_name)

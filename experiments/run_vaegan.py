@@ -15,8 +15,83 @@ from utils.experiment_saver import (
     should_skip_experiment,
 )
 
+DATASET_ALIASES = {
+    "mvtec": "MVTec",
+    "mvtex": "MVTec",
+    "mvtec_ad": "MVTec",
+    "mvtec-ad": "MVTec",
+    "mvtec_anomaly_detection": "MVTec",
+    "cobot": "Cobots_Synthetic",
+    "cobots": "Cobots_Synthetic",
+    "cobots_synthetic": "Cobots_Synthetic",
+    "distrimuse": "Cobots_Synthetic",
+    "distrimuse_unigra": "Cobots_Synthetic",
+    "robotics_hazards": "Robotics_Hazards",
+    "robotics-hazards": "Robotics_Hazards",
+    "hazards": "Robotics_Hazards",
+    "corridor": "Robotics_Hazards",
+}
 
-def main(config_path, suffix, force, overrides=None):
+DATASET_CATEGORIES = {
+    "MVTec": [
+        "bottle",
+        "cable",
+        "capsule",
+        "carpet",
+        "grid",
+        "hazelnut",
+        "leather",
+        "metal_nut",
+        "pill",
+        "screw",
+        "tile",
+        "toothbrush",
+        "transistor",
+        "wood",
+        "zipper",
+    ],
+    "Cobots_Synthetic": ["PLeft", "PRight", "ConvBelt", "RoboArm"],
+    "Robotics_Hazards": ["corridor"],
+}
+
+
+def normalize_dataset_name(dataset):
+    """Return the canonical dataset name used by configs and data loaders."""
+    if dataset is None:
+        return None
+
+    key = str(dataset).strip()
+    return DATASET_ALIASES.get(key.lower(), key)
+
+
+def parse_category_list(value):
+    """Parse comma-separated category input from the CLI."""
+    if value is None:
+        return None
+
+    if isinstance(value, (list, tuple)):
+        return list(value)
+
+    categories = [
+        item.strip()
+        for item in str(value).split(",")
+        if item.strip()
+    ]
+    return categories or None
+
+
+def get_dataset_categories(dataset):
+    """Return known categories/areas for a supported dataset."""
+    dataset = normalize_dataset_name(dataset)
+    if dataset not in DATASET_CATEGORIES:
+        raise ValueError(
+            f"Unknown dataset for category sweep: {dataset}. "
+            f"Supported: {', '.join(DATASET_CATEGORIES)}"
+        )
+    return DATASET_CATEGORIES[dataset]
+
+
+def run_single_experiment(config_path, suffix, force, overrides=None):
     """Run a full VAE-GAN anomaly detection experiment from a config file."""
     config = read_config(config_path)
     applied_overrides = apply_config_overrides(config, overrides)
@@ -33,7 +108,7 @@ def main(config_path, suffix, force, overrides=None):
         print(f"[+] Experiment already exists: {existing['id']}")
         print(f"[+] Existing run directory: {existing['run_dir']}")
         print("[+] Skipping execution. Use --force to run again.")
-        return
+        return {"status": "skipped", "existing": existing}
 
     device = set_device(config)
 
@@ -106,6 +181,69 @@ def main(config_path, suffix, force, overrides=None):
 
     print(f"[+] Experiment {exp_id} completed.")
     print(f"[+] Results saved to: {run_dir}")
+    return {"status": "done", "id": exp_id, "run_dir": str(run_dir)}
+
+
+def run_experiment(
+    config_path,
+    suffix="",
+    force=False,
+    overrides=None,
+    dataset=None,
+    categories=None,
+):
+    """Run one experiment or sweep all categories for a dataset."""
+    overrides = list(overrides or [])
+    dataset = normalize_dataset_name(dataset)
+    categories = parse_category_list(categories)
+
+    if categories == ["all"]:
+        if dataset is None:
+            base_config = read_config(config_path)
+            dataset = normalize_dataset_name(base_config.data.name)
+        categories = get_dataset_categories(dataset)
+
+    if dataset is None and not categories:
+        return [run_single_experiment(config_path, suffix, force, overrides)]
+
+    if dataset is None:
+        base_config = read_config(config_path)
+        dataset = normalize_dataset_name(base_config.data.name)
+
+    if not categories:
+        categories = get_dataset_categories(dataset)
+
+    results = []
+    total = len(categories)
+    for index, category in enumerate(categories, start=1):
+        print("=" * 80)
+        print(f"[+] Dataset sweep {index}/{total}: {dataset}/{category}")
+        print("=" * 80)
+        run_overrides = [
+            *overrides,
+            f"data.name={dataset}",
+            f"data.category={category}",
+        ]
+        results.append(
+            run_single_experiment(
+                config_path=config_path,
+                suffix=suffix,
+                force=force,
+                overrides=run_overrides,
+            )
+        )
+
+    done = sum(1 for item in results if item and item.get("status") == "done")
+    skipped = sum(1 for item in results if item and item.get("status") == "skipped")
+    print("=" * 80)
+    print(f"[+] Sweep completed: done={done}, skipped={skipped}, total={total}")
+    print("=" * 80)
+    return results
+
+
+def main(config_path, suffix, force, overrides=None):
+    """Backward-compatible single-experiment entry point."""
+    return run_single_experiment(config_path, suffix, force, overrides)
 
 
 def cli():
@@ -117,7 +255,18 @@ def cli():
     parser.add_argument(
         "--category",
         default=None,
-        help="Override data.category, for example --category zipper.",
+        help=(
+            "Override data.category, for example --category zipper. "
+            "Use --category all with --dataset to sweep all known categories."
+        ),
+    )
+    parser.add_argument(
+        "--dataset",
+        default=None,
+        help=(
+            "Override data.name and run all known categories for that dataset "
+            "unless --category selects one category. Examples: MVTec, Cobots_Synthetic."
+        ),
     )
     parser.add_argument(
         "--dataset-root",
@@ -154,8 +303,14 @@ def cli():
 
     args = parser.parse_args()
     overrides = list(args.set_overrides)
-    if args.category is not None:
-        overrides.append(f"data.category={args.category}")
+    sweep_categories = None
+    if args.category is not None and args.category.lower() == "all":
+        sweep_categories = ["all"]
+    elif args.category is not None:
+        if args.dataset is not None:
+            sweep_categories = [args.category]
+        else:
+            overrides.append(f"data.category={args.category}")
     if args.dataset_root is not None:
         overrides.append(f"data.dataset_root={args.dataset_root}")
     if args.checkpoint_root is not None:
@@ -163,7 +318,14 @@ def cli():
     if args.device is not None:
         overrides.append(f"device={args.device}")
 
-    main(args.config, args.suffix, args.force, overrides)
+    run_experiment(
+        config_path=args.config,
+        suffix=args.suffix,
+        force=args.force,
+        overrides=overrides,
+        dataset=args.dataset,
+        categories=sweep_categories,
+    )
 
 
 if __name__ == "__main__":

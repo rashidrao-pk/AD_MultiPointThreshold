@@ -98,6 +98,22 @@ python -m modules.training.train --config configs/mvtec_xn2.yaml --model vaegan 
   --set threshold.percentile=99
 ```
 
+Train every known object/area for a dataset:
+
+```bash
+# Train all MVTec objects using one config template
+python -m modules.training.train --config configs/mvtec_xn2.yaml --dataset MVTec --model vaegan --force
+
+# Train one object while also overriding the dataset name
+python -m modules.training.train --config configs/mvtec_xn2.yaml --dataset MVTec --category zipper --model vaegan --force
+
+# Train all Cobots safety areas
+python -m modules.training.train --config configs/cobots_xn2.yaml --dataset Cobots_Synthetic --model vaegan --force
+
+# Train all MVTec objects for every registered trainable model
+python -m modules.training.train --config configs/mvtec_xn2.yaml --dataset MVTec --model all --force
+```
+
 For all Models
 
 ```bash
