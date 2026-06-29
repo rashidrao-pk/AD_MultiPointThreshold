@@ -49,6 +49,7 @@ INFERENCE_PLOT_TYPES = {
 }
 
 LOSS_HISTORY = "loss_history.csv"
+VECTOR_EXTENSIONS = {".csv", ".json"}
 
 
 def _json_response(handler, payload, status=200):
@@ -271,6 +272,154 @@ def _read_csv_rows(path):
         return list(csv.DictReader(handle))
 
 
+def _safe_result_file(path_arg):
+    """Resolve a CSV/JSON result file under results/."""
+    path = _safe_run_path(path_arg)
+    results_root = (ROOT / "results").resolve()
+    if results_root not in path.parents and path != results_root:
+        raise ValueError("Vector file must be inside results/.")
+    if path.suffix.lower() not in VECTOR_EXTENSIONS:
+        raise ValueError("Vector file must be a CSV or JSON file.")
+    if not path.is_file():
+        raise FileNotFoundError(f"Vector file does not exist: {path}")
+    return path
+
+
+def _coerce_scalar(value):
+    """Convert CSV strings into useful scalar values when possible."""
+    if value is None:
+        return None
+    value = str(value)
+    stripped = value.strip()
+    if stripped == "":
+        return None
+    lowered = stripped.lower()
+    if lowered == "true":
+        return True
+    if lowered == "false":
+        return False
+    try:
+        if re.fullmatch(r"[-+]?\d+", stripped):
+            return int(stripped)
+        return float(stripped)
+    except ValueError:
+        return value
+
+
+def _flatten_json(value, prefix=""):
+    """Flatten nested JSON dictionaries into dotted keys for plotting."""
+    rows = []
+    if isinstance(value, dict):
+        for key, item in value.items():
+            key_prefix = f"{prefix}.{key}" if prefix else str(key)
+            rows.extend(_flatten_json(item, key_prefix))
+    elif isinstance(value, list):
+        for idx, item in enumerate(value):
+            key_prefix = f"{prefix}.{idx}" if prefix else str(idx)
+            rows.extend(_flatten_json(item, key_prefix))
+    else:
+        rows.append({"key": prefix, "value": value})
+    return rows
+
+
+def _numeric_columns(rows):
+    """Return columns with at least one numeric value."""
+    numeric = []
+    if not rows:
+        return numeric
+    keys = list(rows[0].keys())
+    for key in keys:
+        for row in rows:
+            value = row.get(key)
+            if isinstance(value, (int, float)) and not isinstance(value, bool):
+                numeric.append(key)
+                break
+    return numeric
+
+
+def _list_vector_files():
+    """Return CSV/JSON result files that can feed Plotly charts."""
+    results_root = ROOT / "results"
+    files = []
+    if not results_root.exists():
+        return files
+
+    for path in results_root.rglob("*"):
+        if not path.is_file() or path.suffix.lower() not in VECTOR_EXTENSIONS:
+            continue
+        # Keep the browser responsive by listing huge CSVs but loading them sampled.
+        files.append(
+            {
+                "name": path.name,
+                "path": _relative_to_root(path),
+                "parent": _relative_to_root(path.parent),
+                "size_kb": round(path.stat().st_size / 1024, 1),
+                "mtime": path.stat().st_mtime,
+                "type": path.suffix.lower().lstrip("."),
+            }
+        )
+
+    return sorted(files, key=lambda item: item["mtime"], reverse=True)
+
+
+def _read_vector_file(path, max_rows=5000):
+    """Read a CSV/JSON result file into row records for Plotly."""
+    path = _safe_result_file(path)
+    max_rows = max(1, int(max_rows or 5000))
+
+    if path.suffix.lower() == ".csv":
+        rows = []
+        total_rows = 0
+        with open(path, "r", newline="", encoding="utf-8") as handle:
+            reader = csv.DictReader(handle)
+            columns = reader.fieldnames or []
+            for total_rows, row in enumerate(reader, start=1):
+                if len(rows) < max_rows:
+                    rows.append({key: _coerce_scalar(value) for key, value in row.items()})
+        return {
+            "path": _relative_to_root(path),
+            "name": path.name,
+            "type": "csv",
+            "columns": columns,
+            "numeric_columns": _numeric_columns(rows),
+            "rows": rows,
+            "row_count": total_rows,
+            "returned_rows": len(rows),
+            "truncated": total_rows > len(rows),
+        }
+
+    with open(path, "r", encoding="utf-8") as handle:
+        payload = json.load(handle)
+
+    if isinstance(payload, list):
+        rows = payload[:max_rows]
+        if rows and isinstance(rows[0], dict):
+            rows = [
+                {key: _coerce_scalar(value) for key, value in row.items()}
+                for row in rows
+            ]
+        else:
+            rows = [{"index": idx, "value": value} for idx, value in enumerate(rows)]
+    elif isinstance(payload, dict):
+        rows = _flatten_json(payload)
+    else:
+        rows = [{"key": "value", "value": payload}]
+
+    rows = rows[:max_rows]
+    columns = sorted({key for row in rows if isinstance(row, dict) for key in row.keys()})
+    return {
+        "path": _relative_to_root(path),
+        "name": path.name,
+        "type": "json",
+        "columns": columns,
+        "numeric_columns": _numeric_columns(rows),
+        "rows": rows,
+        "row_count": len(rows),
+        "returned_rows": len(rows),
+        "truncated": False,
+    }
+
+
 def find_run_record(run_path):
     """Find the training-run registry row matching a run directory."""
     run_dir = str(run_path.resolve())
@@ -369,6 +518,9 @@ class TrainingViewerHandler(SimpleHTTPRequestHandler):
         if parsed.path == "/config":
             self.path = "/app/configs.html"
             return super().do_GET()
+        if parsed.path == "/plotly":
+            self.path = "/app/plotly.html"
+            return super().do_GET()
         if parsed.path == "/api/runs":
             return _json_response(self, {"runs": list_runs()})
         if parsed.path == "/api/experiments":
@@ -383,6 +535,10 @@ class TrainingViewerHandler(SimpleHTTPRequestHandler):
             return self._handle_epochs(parsed)
         if parsed.path == "/api/status":
             return self._handle_status(parsed)
+        if parsed.path == "/api/vector_files":
+            return _json_response(self, {"files": _list_vector_files()})
+        if parsed.path == "/api/vector_data":
+            return self._handle_vector_data(parsed)
         if parsed.path == "/api/events":
             return self._handle_events(parsed)
         return super().do_GET()
@@ -442,6 +598,20 @@ class TrainingViewerHandler(SimpleHTTPRequestHandler):
         query = parse_qs(parsed.query)
         try:
             return _json_response(self, read_config_file(query.get("path", [""])[0]))
+        except Exception as exc:
+            return _json_response(self, {"error": str(exc)}, status=400)
+
+    def _handle_vector_data(self, parsed):
+        """Return CSV/JSON rows for browser-side Plotly charts."""
+        query = parse_qs(parsed.query)
+        try:
+            return _json_response(
+                self,
+                _read_vector_file(
+                    query.get("path", [""])[0],
+                    max_rows=query.get("max_rows", ["5000"])[0],
+                ),
+            )
         except Exception as exc:
             return _json_response(self, {"error": str(exc)}, status=400)
 

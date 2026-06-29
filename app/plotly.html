@@ -1,0 +1,538 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Plotly Artifact Explorer</title>
+    <script src="https://cdn.plot.ly/plotly-2.35.2.min.js"></script>
+    <style>
+      :root {
+        color-scheme: light;
+        --ink: #17202a;
+        --muted: #65707c;
+        --line: #d7dde4;
+        --panel: #ffffff;
+        --soft: #f4f7fa;
+        --accent: #1167b1;
+        --accent-soft: #e8f2fb;
+        --danger: #a43131;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        min-height: 100vh;
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        color: var(--ink);
+        background: var(--soft);
+      }
+
+      header,
+      main {
+        width: min(1400px, calc(100% - 28px));
+        margin: 0 auto;
+      }
+
+      header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 16px;
+        padding: 22px 0 14px;
+      }
+
+      h1 {
+        margin: 0;
+        font-size: clamp(1.45rem, 3vw, 2.35rem);
+        letter-spacing: 0;
+      }
+
+      nav {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+      }
+
+      a {
+        color: var(--accent);
+        font-weight: 650;
+        text-decoration: none;
+      }
+
+      main {
+        display: grid;
+        grid-template-columns: minmax(280px, 360px) 1fr;
+        gap: 14px;
+        padding-bottom: 28px;
+      }
+
+      .panel {
+        background: var(--panel);
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        box-shadow: 0 14px 34px rgba(16, 32, 48, 0.07);
+      }
+
+      .controls {
+        display: grid;
+        align-content: start;
+        gap: 12px;
+        padding: 14px;
+      }
+
+      label {
+        display: grid;
+        gap: 6px;
+        color: var(--muted);
+        font-size: 0.82rem;
+        font-weight: 650;
+      }
+
+      input,
+      select {
+        width: 100%;
+        min-height: 38px;
+        border: 1px solid var(--line);
+        border-radius: 6px;
+        padding: 0 10px;
+        color: var(--ink);
+        background: #fff;
+        font: inherit;
+      }
+
+      button {
+        min-height: 38px;
+        border: 1px solid var(--accent);
+        border-radius: 6px;
+        padding: 0 13px;
+        color: #fff;
+        background: var(--accent);
+        font: inherit;
+        font-weight: 650;
+        cursor: pointer;
+      }
+
+      .meta {
+        display: grid;
+        gap: 7px;
+        padding: 10px;
+        border: 1px solid var(--line);
+        border-radius: 6px;
+        background: #f8fafc;
+        color: var(--muted);
+        font-size: 0.86rem;
+      }
+
+      .path {
+        overflow-wrap: anywhere;
+        font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+        color: #26313d;
+        font-size: 0.78rem;
+      }
+
+      .workspace {
+        display: grid;
+        grid-template-rows: minmax(520px, 68vh) auto;
+        gap: 14px;
+      }
+
+      #chart {
+        width: 100%;
+        height: 100%;
+        min-height: 520px;
+      }
+
+      .table-wrap {
+        max-height: 300px;
+        overflow: auto;
+      }
+
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 0.84rem;
+      }
+
+      th,
+      td {
+        max-width: 260px;
+        padding: 8px 10px;
+        border-bottom: 1px solid var(--line);
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        text-align: left;
+      }
+
+      th {
+        position: sticky;
+        top: 0;
+        z-index: 1;
+        background: #f8fafc;
+        color: var(--muted);
+        font-weight: 750;
+      }
+
+      .error {
+        color: var(--danger);
+        font-weight: 650;
+      }
+
+      @media (max-width: 900px) {
+        header {
+          display: grid;
+        }
+
+        main {
+          grid-template-columns: 1fr;
+        }
+
+        .workspace {
+          grid-template-rows: minmax(440px, 62vh) auto;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      <h1>Plotly Artifact Explorer</h1>
+      <nav>
+        <a href="/">Home</a>
+        <a href="/training">Training</a>
+        <a href="/inference">Inference</a>
+        <a href="/config">Configs</a>
+      </nav>
+    </header>
+
+    <main>
+      <aside class="panel controls">
+        <label>
+          Artifact
+          <select id="fileSelect"></select>
+        </label>
+
+        <label>
+          Filter
+          <input id="filterInput" type="text" placeholder="loss, prediction, metrics" />
+        </label>
+
+        <label>
+          Chart
+          <select id="chartType">
+            <option value="auto">Auto</option>
+            <option value="line">Line</option>
+            <option value="scatter">Scatter</option>
+            <option value="histogram">Histogram</option>
+            <option value="bar">Bar</option>
+            <option value="box">Box</option>
+          </select>
+        </label>
+
+        <label>
+          X
+          <select id="xSelect"></select>
+        </label>
+
+        <label>
+          Y
+          <select id="ySelect"></select>
+        </label>
+
+        <label>
+          Group
+          <select id="groupSelect"></select>
+        </label>
+
+        <label>
+          Max rows
+          <input id="maxRows" type="number" min="100" step="100" value="5000" />
+        </label>
+
+        <button id="loadButton" type="button">Load</button>
+
+        <div class="meta">
+          <div id="status">No artifact loaded.</div>
+          <div id="fileMeta" class="path"></div>
+        </div>
+      </aside>
+
+      <section class="workspace">
+        <div class="panel">
+          <div id="chart"></div>
+        </div>
+        <div class="panel table-wrap">
+          <table>
+            <thead id="tableHead"></thead>
+            <tbody id="tableBody"></tbody>
+          </table>
+        </div>
+      </section>
+    </main>
+
+    <script>
+      const state = {
+        files: [],
+        filteredFiles: [],
+        data: null,
+      };
+
+      const fileSelect = document.getElementById("fileSelect");
+      const filterInput = document.getElementById("filterInput");
+      const chartType = document.getElementById("chartType");
+      const xSelect = document.getElementById("xSelect");
+      const ySelect = document.getElementById("ySelect");
+      const groupSelect = document.getElementById("groupSelect");
+      const maxRows = document.getElementById("maxRows");
+      const loadButton = document.getElementById("loadButton");
+      const statusEl = document.getElementById("status");
+      const fileMeta = document.getElementById("fileMeta");
+      const tableHead = document.getElementById("tableHead");
+      const tableBody = document.getElementById("tableBody");
+
+      function isNumber(value) {
+        return typeof value === "number" && Number.isFinite(value);
+      }
+
+      function option(label, value) {
+        const item = document.createElement("option");
+        item.textContent = label;
+        item.value = value;
+        return item;
+      }
+
+      function setStatus(text, isError = false) {
+        statusEl.textContent = text;
+        statusEl.className = isError ? "error" : "";
+      }
+
+      async function fetchJson(url) {
+        const response = await fetch(url, { cache: "no-store" });
+        const payload = await response.json();
+        if (!response.ok || payload.error) {
+          throw new Error(payload.error || response.statusText);
+        }
+        return payload;
+      }
+
+      function renderFileOptions() {
+        const query = filterInput.value.trim().toLowerCase();
+        state.filteredFiles = state.files.filter((file) => {
+          const haystack = `${file.path} ${file.parent} ${file.name}`.toLowerCase();
+          return !query || haystack.includes(query);
+        });
+
+        fileSelect.replaceChildren();
+        for (const file of state.filteredFiles) {
+          fileSelect.appendChild(option(`${file.path} (${file.size_kb} KB)`, file.path));
+        }
+      }
+
+      function inferDefaults(payload) {
+        const columns = payload.columns || [];
+        const numeric = payload.numeric_columns || [];
+        const lower = (value) => String(value || "").toLowerCase();
+
+        const x =
+          columns.find((name) => ["epoch", "step", "index", "frame_no"].includes(lower(name))) ||
+          columns.find((name) => lower(name).endsWith("epoch")) ||
+          columns[0] ||
+          "";
+
+        const y =
+          numeric.find((name) => lower(name).includes("loss")) ||
+          numeric.find((name) => lower(name).includes("score")) ||
+          numeric.find((name) => lower(name).includes("auroc")) ||
+          numeric.find((name) => name !== x) ||
+          numeric[0] ||
+          "";
+
+        const group =
+          columns.find((name) => ["class_name", "binary_label", "prediction", "status", "model"].includes(lower(name))) ||
+          "";
+
+        return { x, y, group };
+      }
+
+      function renderColumnOptions(payload) {
+        const columns = payload.columns || [];
+        const defaults = inferDefaults(payload);
+        const selectors = [xSelect, ySelect, groupSelect];
+
+        for (const select of selectors) {
+          select.replaceChildren(option("None", ""));
+          for (const column of columns) {
+            select.appendChild(option(column, column));
+          }
+        }
+
+        xSelect.value = defaults.x;
+        ySelect.value = defaults.y;
+        groupSelect.value = defaults.group;
+      }
+
+      function rowsByGroup(rows, groupKey) {
+        if (!groupKey) {
+          return [["All", rows]];
+        }
+        const groups = new Map();
+        for (const row of rows) {
+          const key = row[groupKey] == null ? "Missing" : String(row[groupKey]);
+          if (!groups.has(key)) groups.set(key, []);
+          groups.get(key).push(row);
+        }
+        return [...groups.entries()];
+      }
+
+      function chartKind(payload) {
+        if (chartType.value !== "auto") return chartType.value;
+        const name = `${payload.name} ${payload.path}`.toLowerCase();
+        if (name.includes("metrics") || payload.type === "json") return "bar";
+        if (name.includes("loss_history") || name.includes("training_runs") || name.includes("runs.csv")) return "line";
+        if (name.includes("prediction") || name.includes("inference_results") || name.includes("score")) return "histogram";
+        return "scatter";
+      }
+
+      function buildTraces(payload) {
+        const rows = payload.rows || [];
+        const xKey = xSelect.value;
+        const yKey = ySelect.value;
+        const groupKey = groupSelect.value;
+        const kind = chartKind(payload);
+
+        if (kind === "histogram") {
+          const valueKey = yKey || payload.numeric_columns?.[0] || xKey;
+          return rowsByGroup(rows, groupKey).map(([name, groupRows]) => ({
+            type: "histogram",
+            name,
+            x: groupRows.map((row) => row[valueKey]).filter(isNumber),
+            opacity: 0.68,
+            nbinsx: 48,
+          }));
+        }
+
+        if (kind === "bar") {
+          if (payload.type === "json" && rows[0]?.key !== undefined) {
+            return [{
+              type: "bar",
+              x: rows.map((row) => row.key),
+              y: rows.map((row) => row.value).filter((value) => value !== null && value !== undefined),
+              name: payload.name,
+            }];
+          }
+          return rowsByGroup(rows, groupKey).map(([name, groupRows]) => ({
+            type: "bar",
+            name,
+            x: groupRows.map((row, idx) => row[xKey] ?? idx),
+            y: groupRows.map((row) => row[yKey]),
+          }));
+        }
+
+        if (kind === "box") {
+          const valueKey = yKey || payload.numeric_columns?.[0] || xKey;
+          return rowsByGroup(rows, groupKey).map(([name, groupRows]) => ({
+            type: "box",
+            name,
+            y: groupRows.map((row) => row[valueKey]).filter(isNumber),
+            boxpoints: "outliers",
+          }));
+        }
+
+        return rowsByGroup(rows, groupKey).map(([name, groupRows]) => ({
+          type: "scatter",
+          mode: kind === "line" ? "lines+markers" : "markers",
+          name,
+          x: groupRows.map((row, idx) => row[xKey] ?? idx),
+          y: groupRows.map((row) => row[yKey]),
+          marker: { size: kind === "line" ? 5 : 7, opacity: 0.78 },
+        }));
+      }
+
+      function renderChart() {
+        const payload = state.data;
+        if (!payload) return;
+
+        const traces = buildTraces(payload);
+        const layout = {
+          title: { text: payload.name, x: 0.02, xanchor: "left" },
+          margin: { t: 54, r: 24, b: 70, l: 70 },
+          paper_bgcolor: "#ffffff",
+          plot_bgcolor: "#ffffff",
+          barmode: chartKind(payload) === "histogram" ? "overlay" : "group",
+          hovermode: "closest",
+          xaxis: { title: xSelect.value || "" },
+          yaxis: { title: ySelect.value || "" },
+          legend: { orientation: "h", y: -0.22 },
+        };
+        Plotly.react("chart", traces, layout, { responsive: true, displaylogo: false });
+      }
+
+      function renderTable(payload) {
+        const rows = payload.rows || [];
+        const columns = (payload.columns || []).slice(0, 12);
+        tableHead.replaceChildren();
+        tableBody.replaceChildren();
+
+        const headRow = document.createElement("tr");
+        for (const column of columns) {
+          const th = document.createElement("th");
+          th.textContent = column;
+          headRow.appendChild(th);
+        }
+        tableHead.appendChild(headRow);
+
+        for (const row of rows.slice(0, 80)) {
+          const tr = document.createElement("tr");
+          for (const column of columns) {
+            const td = document.createElement("td");
+            td.textContent = row[column] ?? "";
+            tr.appendChild(td);
+          }
+          tableBody.appendChild(tr);
+        }
+      }
+
+      async function loadSelectedFile() {
+        const path = fileSelect.value;
+        if (!path) return;
+        setStatus("Loading...");
+        const payload = await fetchJson(`/api/vector_data?path=${encodeURIComponent(path)}&max_rows=${encodeURIComponent(maxRows.value)}`);
+        state.data = payload;
+        renderColumnOptions(payload);
+        renderChart();
+        renderTable(payload);
+        setStatus(`${payload.returned_rows} of ${payload.row_count} rows`);
+        fileMeta.textContent = payload.truncated ? `${payload.path} sampled` : payload.path;
+      }
+
+      async function init() {
+        try {
+          const payload = await fetchJson("/api/vector_files");
+          state.files = payload.files || [];
+          renderFileOptions();
+          if (state.filteredFiles.length) {
+            const preferred = state.filteredFiles.find((file) => file.name === "loss_history.csv") || state.filteredFiles[0];
+            fileSelect.value = preferred.path;
+            await loadSelectedFile();
+          } else {
+            setStatus("No CSV or JSON artifacts found.", true);
+          }
+        } catch (error) {
+          setStatus(error.message, true);
+        }
+      }
+
+      filterInput.addEventListener("input", renderFileOptions);
+      loadButton.addEventListener("click", () => loadSelectedFile().catch((error) => setStatus(error.message, true)));
+      fileSelect.addEventListener("change", () => loadSelectedFile().catch((error) => setStatus(error.message, true)));
+      chartType.addEventListener("change", renderChart);
+      xSelect.addEventListener("change", renderChart);
+      ySelect.addEventListener("change", renderChart);
+      groupSelect.addEventListener("change", renderChart);
+
+      init();
+    </script>
+  </body>
+</html>

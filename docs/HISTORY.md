@@ -2,12 +2,17 @@
 
 ### By Rashid
 
-1. [ ] `Fixed Data Loader` (effected files):
+1. [x] `Fixed Data Loader` (effected files):
    - [data/load.py](/data/load.py)
    - [data/load.py](/data/load.py)
 
-2. [ ] `Zip project` respecting the [.gitgnore](#) file (effected files):
+2. [x] `Zip project` respecting the [.gitgnore](#) file (effected files):
    - [scripts/create_release_zip.py](scripts/create_release_zip.py)
-
 3. [x] `Plot Results`
-   - Add Evaluation results [x]
+   - [x] Add Evaluation results
+   - [x] Add Latent Space
+
+4. [x] Live-web plots monitoring
+   -  `python app.py` and then visit [http://127.0.0.1:8000/training](http://127.0.0.1:8000/training)
+5. [x] Override `config parameters` with `CLI` args
+   -  
