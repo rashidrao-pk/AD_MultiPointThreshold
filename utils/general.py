@@ -169,6 +169,49 @@ def namespace_to_dict(obj):
     return obj
 
 
+def parse_override_value(value):
+    """Parse a CLI override value using YAML scalar/list/dict syntax."""
+    try:
+        return yaml.safe_load(value)
+    except yaml.YAMLError:
+        return value
+
+
+def set_config_value(config, dotted_key, value):
+    """Set a nested config value from a dotted key such as data.category."""
+    keys = dotted_key.split(".")
+    if not all(keys):
+        raise ValueError(f"Invalid override key: {dotted_key!r}")
+
+    target = config
+    for key in keys[:-1]:
+        if not hasattr(target, key):
+            setattr(target, key, SimpleNamespace())
+        target = getattr(target, key)
+
+    setattr(target, keys[-1], value)
+
+
+def apply_config_overrides(config, overrides):
+    """Apply key=value CLI overrides to a namespace-style config object."""
+    applied = []
+
+    for override in overrides or []:
+        if "=" not in override:
+            raise ValueError(
+                f"Invalid override {override!r}. Use dotted.key=value, "
+                "for example data.category=zipper."
+            )
+
+        key, raw_value = override.split("=", 1)
+        key = key.strip()
+        value = parse_override_value(raw_value.strip())
+        set_config_value(config, key, value)
+        applied.append((key, value))
+
+    return applied
+
+
 def save_config_yaml(config, path):
     """Save a namespace-style config object as a YAML file."""
     with open(path, "w") as f:

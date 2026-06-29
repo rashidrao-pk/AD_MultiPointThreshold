@@ -1,6 +1,6 @@
 import argparse
 
-from utils import read_config, set_device
+from utils import apply_config_overrides, read_config, set_device
 from data import load_data
 from models.vaegan import load_model
 from modules.scoring import score_samples
@@ -16,9 +16,12 @@ from utils.experiment_saver import (
 )
 
 
-def main(config_path, suffix, force):
+def main(config_path, suffix, force, overrides=None):
     """Run a full VAE-GAN anomaly detection experiment from a config file."""
     config = read_config(config_path)
+    applied_overrides = apply_config_overrides(config, overrides)
+    for key, value in applied_overrides:
+        print(f"[+] Config override: {key} = {value}")
 
     should_skip, existing = should_skip_experiment(
         config=config,
@@ -112,13 +115,55 @@ def cli():
     parser.add_argument("--config", required=True)
     parser.add_argument("--suffix", default="")
     parser.add_argument(
+        "--category",
+        default=None,
+        help="Override data.category, for example --category zipper.",
+    )
+    parser.add_argument(
+        "--dataset-root",
+        default=None,
+        help="Override data.dataset_root.",
+    )
+    parser.add_argument(
+        "--checkpoint-root",
+        default=None,
+        help="Override model.checkpoint_root.",
+    )
+    parser.add_argument(
+        "--device",
+        default=None,
+        help="Override device, for example auto, cpu, cuda, or mps.",
+    )
+    parser.add_argument(
+        "--set",
+        dest="set_overrides",
+        action="append",
+        default=[],
+        metavar="KEY=VALUE",
+        help=(
+            "Override any config value using dotted keys. "
+            "Can be repeated, e.g. --set data.category=zipper "
+            "--set threshold.percentile=99."
+        ),
+    )
+    parser.add_argument(
         "--force",
         action="store_true",
         help="Force execution even if the same experiment already exists.",
     )
 
     args = parser.parse_args()
-    main(args.config, args.suffix, args.force)
+    overrides = list(args.set_overrides)
+    if args.category is not None:
+        overrides.append(f"data.category={args.category}")
+    if args.dataset_root is not None:
+        overrides.append(f"data.dataset_root={args.dataset_root}")
+    if args.checkpoint_root is not None:
+        overrides.append(f"model.checkpoint_root={args.checkpoint_root}")
+    if args.device is not None:
+        overrides.append(f"device={args.device}")
+
+    main(args.config, args.suffix, args.force, overrides)
 
 
 if __name__ == "__main__":

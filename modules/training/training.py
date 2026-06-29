@@ -27,7 +27,7 @@ import torch
 
 from data import load_data
 from models.vaegan.loader import get_checkpoint_path
-from utils import read_config, resolve_device, save_config_yaml
+from utils import apply_config_overrides, read_config, resolve_device, save_config_yaml
 from utils.general import namespace_to_dict
 
 
@@ -239,6 +239,33 @@ def parse_args():
     parser.add_argument("--device", default=None, help="Override config.device.")
     parser.add_argument("--suffix", default="", help="Optional run-directory suffix.")
     parser.add_argument(
+        "--category",
+        default=None,
+        help="Override data.category, for example --category zipper.",
+    )
+    parser.add_argument(
+        "--dataset-root",
+        default=None,
+        help="Override data.dataset_root.",
+    )
+    parser.add_argument(
+        "--checkpoint-root",
+        default=None,
+        help="Override model.checkpoint_root.",
+    )
+    parser.add_argument(
+        "--set",
+        dest="set_overrides",
+        action="append",
+        default=[],
+        metavar="KEY=VALUE",
+        help=(
+            "Override any config value using dotted keys. "
+            "Can be repeated, e.g. --set data.category=zipper "
+            "--set training.beta_center=0.0001."
+        ),
+    )
+    parser.add_argument(
         "--force",
         "--force_train",
         action="store_true",
@@ -296,6 +323,24 @@ def parse_args():
     )
     parser.add_argument("--dry_run", action="store_true", help="Load data and create run dir, then stop.")
     return parser.parse_args()
+
+
+def _config_overrides_from_args(args):
+    """Collect config overrides from friendly CLI flags and generic --set values."""
+    overrides = list(args.set_overrides)
+
+    if args.category is not None:
+        overrides.append(f"data.category={args.category}")
+    if args.dataset_root is not None:
+        overrides.append(f"data.dataset_root={args.dataset_root}")
+    if args.checkpoint_root is not None:
+        overrides.append(f"model.checkpoint_root={args.checkpoint_root}")
+    if args.device is not None:
+        overrides.append(f"device={args.device}")
+    if args.epochs is not None:
+        overrides.append(f"training.epochs={args.epochs}")
+
+    return overrides
 
 
 def dispatch_trainer(config):
@@ -447,6 +492,10 @@ def main():
     config_path = _resolve_config_path(args.config, project_root)
 
     base_config = read_config(config_path)
+    applied_overrides = apply_config_overrides(base_config, _config_overrides_from_args(args))
+    for key, value in applied_overrides:
+        print(f"[config_override] {key} = {value}")
+
     model_names = _selected_model_names(base_config, args.model)
     print(f"[models] selected={', '.join(model_names)}")
 

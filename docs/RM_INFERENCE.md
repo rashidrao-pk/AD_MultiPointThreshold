@@ -16,6 +16,19 @@ python -m experiments.run_vaegan --config configs/cobots_mac.yaml --force
 python -m experiments.run_vaegan --config configs/hazards_mac.yaml --force
 ```
 
+Override config values from CLI without editing YAML:
+
+```bash
+# Friendly shortcut for MVTec object/category
+python -m experiments.run_vaegan --config configs/mvtec_mac.yaml --category zipper --force
+
+# Generic dotted-key overrides; can be repeated
+python -m experiments.run_vaegan --config configs/mvtec_mac.yaml --force \
+  --set data.category=hazelnut \
+  --set threshold.percentile=99 \
+  --set scoring.method=reconstruction_l2
+```
+
 ## PLOT Results:
 
 ```bash

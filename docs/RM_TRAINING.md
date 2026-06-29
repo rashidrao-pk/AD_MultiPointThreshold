@@ -75,6 +75,29 @@ python -m modules.training.train --config configs/mvtec_mac.yaml --model vaegan 
   --latent_projection pca
 ```
 
+Override config values from CLI without editing YAML:
+
+```bash
+# Friendly shortcut for MVTec object/category
+python -m modules.training.train --config configs/mvtec_xn2.yaml --model vaegan \
+  --category zipper \
+  --force \
+  --plot_curves \
+  --plot_score_distribution \
+  --plot_quality \
+  --plot_latent_space \
+  --latent_space_classes both \
+  --latent_projection pca
+
+# Generic dotted-key overrides; can be repeated
+python -m modules.training.train --config configs/mvtec_xn2.yaml --model vaegan \
+  --force \
+  --set data.category=hazelnut \
+  --set training.epochs=200 \
+  --set training.beta_center=0.0001 \
+  --set threshold.percentile=99
+```
+
 For all Models
 
 ```bash

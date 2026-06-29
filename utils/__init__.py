@@ -1,4 +1,5 @@
 from .general import (
+    apply_config_overrides,
     deep_merge,
     expand_env_value,
     load_yaml_dict,
@@ -13,6 +14,7 @@ from .general import (
 
 
 __all__ = [
+    "apply_config_overrides",
     "deep_merge",
     "expand_env_value",
     "load_yaml_dict",
