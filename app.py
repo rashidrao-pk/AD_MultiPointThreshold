@@ -50,6 +50,30 @@ INFERENCE_PLOT_TYPES = {
 
 LOSS_HISTORY = "loss_history.csv"
 VECTOR_EXTENSIONS = {".csv", ".json"}
+IGNORED_VECTOR_NAMES = {
+    "dataset_summary.json",
+    "dataset_file_scan.csv",
+    "dataset_path_status.csv",
+    "dataset_paths_status.csv",
+    "dataset_split_label_summary.csv",
+    "dataset_sploit_label_summary.csv",
+    "latent_axis_limits.json",
+    "model_last_dataset_summary.json",
+    "model_best_dataset_summary.json",
+    "model_last_config.json",
+    "model_best_config.json",
+}
+IGNORED_VECTOR_JSON_NAMES = {
+    "latent_axis_limits.json",
+    "model_last_dataset_summary.json",
+    "model_best_dataset_summary.json",
+    "model_last_config.json",
+    "model_best_config.json",
+}
+IGNORED_VECTOR_JSON_SUFFIXES = (
+    "_dataset_summary.json",
+    "_config.json",
+)
 
 
 def _json_response(handler, payload, status=200):
@@ -280,9 +304,23 @@ def _safe_result_file(path_arg):
         raise ValueError("Vector file must be inside results/.")
     if path.suffix.lower() not in VECTOR_EXTENSIONS:
         raise ValueError("Vector file must be a CSV or JSON file.")
+    if _is_ignored_vector_file(path):
+        raise ValueError(f"Vector file is hidden from Plotly explorer: {path.name}")
     if not path.is_file():
         raise FileNotFoundError(f"Vector file does not exist: {path}")
     return path
+
+
+def _is_ignored_vector_file(path):
+    """Return whether a result file is metadata noise for the Plotly explorer."""
+    name = path.name.lower()
+    if name in IGNORED_VECTOR_NAMES:
+        return True
+    if path.suffix.lower() != ".json":
+        return False
+    if name in IGNORED_VECTOR_JSON_NAMES:
+        return True
+    return any(name.endswith(suffix) for suffix in IGNORED_VECTOR_JSON_SUFFIXES)
 
 
 def _coerce_scalar(value):
@@ -346,6 +384,8 @@ def _list_vector_files():
 
     for path in results_root.rglob("*"):
         if not path.is_file() or path.suffix.lower() not in VECTOR_EXTENSIONS:
+            continue
+        if _is_ignored_vector_file(path):
             continue
         # Keep the browser responsive by listing huge CSVs but loading them sampled.
         files.append(
