@@ -78,7 +78,7 @@
 
       .fields {
         display: grid;
-        grid-template-columns: minmax(260px, 1fr) minmax(260px, 1fr) 120px;
+        grid-template-columns: minmax(260px, 1fr) minmax(260px, 1fr);
         gap: 12px;
         align-items: end;
       }
@@ -421,20 +421,8 @@
               value="../results/runs/MVTec_hazelnut_simple_vaegan_2026_06_27_19_05_01"
             />
           </label>
-          <label>
-            Max epoch
-            <input id="maxEpoch" type="number" min="1" value="360" />
-          </label>
         </div>
 
-        <div class="slider-row">
-          <span class="epoch-badge" id="epochLabel">Epoch 0001</span>
-          <input id="epochSlider" type="range" min="0" value="0" step="1" />
-          <button id="refreshButton" type="button">Refresh</button>
-          <button id="liveButton" type="button" aria-pressed="true">
-            Live On
-          </button>
-        </div>
         <div class="status" id="liveStatus">Waiting for plots...</div>
         <div class="metrics" aria-label="Live training metrics">
           <div class="metric">
@@ -462,6 +450,14 @@
           <summary>Model details</summary>
           <div class="details-grid" id="modelDetailsGrid"></div>
         </details>
+        <div class="slider-row">
+          <span class="epoch-badge" id="epochLabel">Epoch 0001</span>
+          <input id="epochSlider" type="range" min="0" value="0" step="1" />
+          <button id="refreshButton" type="button">Refresh</button>
+          <button id="liveButton" type="button" aria-pressed="true">
+            Live On
+          </button>
+        </div>
       </section>
 
       <section class="viewer">
@@ -624,10 +620,10 @@
         liveTimer: null,
         eventSource: null,
       };
+      const STATIC_MAX_EPOCH = 360;
 
       const runPath = document.getElementById("runPath");
       const runSelect = document.getElementById("runSelect");
-      const maxEpoch = document.getElementById("maxEpoch");
       const epochSlider = document.getElementById("epochSlider");
       const epochLabel = document.getElementById("epochLabel");
       const refreshButton = document.getElementById("refreshButton");
@@ -718,7 +714,7 @@
       }
 
       function buildEpochs() {
-        const maxValue = Math.max(parseInt(maxEpoch.value || "1", 10), 1);
+        const maxValue = STATIC_MAX_EPOCH;
         const values = Array.from({ length: maxValue }, (_, index) => index + 1);
         state.epochs = values.sort((a, b) => a - b);
         epochSlider.max = String(state.epochs.length - 1);
@@ -992,7 +988,7 @@
     plotImage.addEventListener("error", () => {
         plotImage.style.display = "none";
         missingMessage.style.display = "block";
-        missingMessage.textContent = `No image found for ${tabs[state.tab].title} at ${epochLabel.textContent}. Check the run folder, max epoch, and plot interval.`;
+        missingMessage.textContent = `No image found for ${tabs[state.tab].title} at ${epochLabel.textContent}. Check the run folder and plot interval.`;
       });
 
     function setLiveMode(enabled) {
@@ -1036,7 +1032,6 @@
       epochSlider.addEventListener("input", updateView);
       refreshButton.addEventListener("click", () => refreshLiveEpochs(false));
       liveButton.addEventListener("click", () => setLiveMode(!state.live));
-      maxEpoch.addEventListener("change", refreshEpochs);
       runPath.addEventListener("change", () => {
         syncSelectedRun();
         state.epochsByTab = {};
