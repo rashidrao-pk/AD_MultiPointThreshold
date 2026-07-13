@@ -10,13 +10,13 @@ def build_transforms(img_size, augmentation="none"):
         train_ops.extend(
             [
                 transforms.RandomApply(
-                    [transforms.ColorJitter(brightness=0.15, contrast=0.15, saturation=0.10)],
+                    [transforms.ColorJitter(brightness=0.10, contrast=0.10, saturation=0.10)],
                     p=0.5,
                 ),
                 transforms.RandomAffine(
-                    degrees=3,
+                    degrees=1,
                     translate=(0.02, 0.02),
-                    scale=(0.98, 1.02),
+                    scale=(0.99, 1.01),
                     fill=0,
                 ),
             ]

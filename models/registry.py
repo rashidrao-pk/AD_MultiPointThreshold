@@ -1,5 +1,7 @@
 from models.vaegan.loader import load_model as load_advis_vaegan_checkpoint
 from models.vaegan.trainer import train_model as train_vaegan
+from models.ae.loader import load_model as load_basic_ae_checkpoint
+from models.ae.trainer import train_model as train_basic_ae
 
 
 MODEL_ALIASES = {
@@ -14,6 +16,10 @@ MODEL_ALIASES = {
     "simple_vaegan": "simple_vaegan",
     "simple_vae_gan": "simple_vaegan",
     "simple-vae-gan": "simple_vaegan",
+    "ae": "basic_ae",
+    "basic_ae": "basic_ae",
+    "autoencoder": "basic_ae",
+    "basic_autoencoder": "basic_ae",
 }
 
 
@@ -29,6 +35,12 @@ MODEL_INFO = {
         "description": "Generic VAE-GAN baseline using the shared VAE-GAN trainer.",
         "has_pretrained_loader": False,
         "trainable": False,
+    },
+    "basic_ae": {
+        "display_name": "Basic AE",
+        "description": "Convolutional autoencoder reconstruction baseline with no KL or GAN loss.",
+        "has_pretrained_loader": True,
+        "trainable": True,
     },
 }
 
@@ -46,6 +58,8 @@ def get_trainer(name):
     model_name = normalize_model_name(name)
     if model_name in {"advis_vaegan", "simple_vaegan"}:
         return train_vaegan
+    if model_name == "basic_ae":
+        return train_basic_ae
     raise ValueError(f"No trainer registered for model: {name}")
 
 
@@ -59,6 +73,8 @@ def get_checkpoint_loader(name):
     model_name = normalize_model_name(name)
     if model_name == "advis_vaegan":
         return load_advis_vaegan_checkpoint
+    if model_name == "basic_ae":
+        return load_basic_ae_checkpoint
     raise ValueError(f"No checkpoint loader registered for model: {name}")
 
 

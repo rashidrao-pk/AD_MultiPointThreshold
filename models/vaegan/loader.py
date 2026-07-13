@@ -4,21 +4,24 @@ from .model import Encoder, Decoder, Discriminator
 
 def get_checkpoint_path(model_cfg, data_cfg):
     """Build the expected checkpoint path for a dataset/model configuration."""
+    model_name = str(getattr(model_cfg, "name", "advis_vaegan")).lower().replace("-", "_")
     # i think they all have this format, to check... 
     if data_cfg.name == "MVTec":
         dataset_folder = "AD_MVTec"
-        ckpt_name = f"model_{data_cfg.category}_{model_cfg.latent_dim}.pt"
 
     elif data_cfg.name == "Cobots_Synthetic":
         dataset_folder = "AD_Cobots_Synthetic"
-        ckpt_name = f"model_{data_cfg.category}_{model_cfg.latent_dim}.pt"
 
     elif data_cfg.name == "Robotics_Hazards":
         dataset_folder = "AD_Robotics_Hazards"
-        ckpt_name = f"model_{data_cfg.category}_{model_cfg.latent_dim}.pt"
 
     else:
         raise ValueError(f"Unknown dataset name: {data_cfg.name}")
+
+    if model_name in {"advis", "advis_vaegan", "advis_vae_gan", "vae_gan", "vaegan", "simple_vaegan"}:
+        ckpt_name = f"model_{data_cfg.category}_{model_cfg.latent_dim}.pt"
+    else:
+        ckpt_name = f"model_{model_name}_{data_cfg.category}_{model_cfg.latent_dim}.pt"
 
     return Path(model_cfg.checkpoint_root) / dataset_folder / 'checkpoints' / ckpt_name
 
@@ -26,6 +29,12 @@ def get_checkpoint_path(model_cfg, data_cfg):
 def load_model(config, device):
     """Load VAE-GAN encoder, decoder, and discriminator weights for inference."""
     model_cfg = config.model
+    model_name = str(getattr(model_cfg, "name", "advis_vaegan")).lower().replace("-", "_")
+    if model_name in {"ae", "basic_ae", "autoencoder", "basic_autoencoder"}:
+        from models.ae.loader import load_model as load_ae_model
+
+        return load_ae_model(config, device)
+
     data_cfg = config.data
     ckpt_path = get_checkpoint_path(model_cfg, data_cfg)
 
