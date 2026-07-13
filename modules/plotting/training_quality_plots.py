@@ -188,6 +188,96 @@ def _records_to_arrays(records, class_names):
     }
 
 
+def _dataset_sample_path(dataset, index):
+    """Return a dataset sample path when the dataset exposes one."""
+    samples = getattr(dataset, "samples", None) or getattr(dataset, "imgs", None)
+    if samples and index < len(samples):
+        sample = samples[index]
+        if isinstance(sample, (list, tuple)) and sample:
+            return str(sample[0])
+    return ""
+
+
+def _validation_grid_indices(dataset, class_names):
+    """Select one normal and one anomalous validation sample by class name."""
+    targets = getattr(dataset, "targets", None)
+    if targets is None:
+        samples = getattr(dataset, "samples", None) or []
+        targets = [
+            sample[1]
+            for sample in samples
+            if isinstance(sample, (list, tuple)) and len(sample) > 1
+        ]
+
+    selected = {"normal": None, "anomalous": None}
+    for index, label in enumerate(targets):
+        key = "normal" if _is_normal_label(label, class_names) else "anomalous"
+        if selected[key] is None:
+            selected[key] = index
+        if selected["normal"] is not None and selected["anomalous"] is not None:
+            break
+
+    return selected
+
+
+def _collect_validation_grid_records(encoder, decoder, discriminator, loader, device):
+    """Collect deterministic normal/anomalous examples for the validation grid."""
+    dataset = getattr(loader, "dataset", None)
+    if dataset is None:
+        return []
+
+    class_names = _class_names_from_loader(loader)
+    selected = _validation_grid_indices(dataset, class_names)
+    indices = [
+        index
+        for index in (selected["normal"], selected["anomalous"])
+        if index is not None
+    ]
+    if not indices:
+        return []
+
+    encoder.eval()
+    decoder.eval()
+    if discriminator is not None:
+        discriminator.eval()
+
+    records = []
+    with torch.inference_mode():
+        for index in indices:
+            image, label = dataset[index]
+            image = image.detach().cpu()
+            batch = image.unsqueeze(0).to(device)
+            mu, _ = encoder(batch)
+            recon = decoder(mu)
+            abs_diff = torch.abs(batch - recon)
+            l1_score = torch.mean(abs_diff, dim=(1, 2, 3))[0]
+            l2_score = torch.sqrt(torch.mean((batch - recon) ** 2, dim=(1, 2, 3)))[0]
+            mse_score = torch.mean((batch - recon) ** 2, dim=(1, 2, 3))[0]
+            max_score = torch.amax(torch.mean(abs_diff, dim=1), dim=(1, 2))[0]
+            latent_radius = torch.sum(mu ** 2, dim=1)[0]
+            if discriminator is None:
+                dis_score = torch.tensor(float("nan"))
+            else:
+                dis_score = torch.sigmoid(discriminator(recon)).flatten()[0]
+
+            records.append(
+                {
+                    "label": int(label),
+                    "score_l1": float(l1_score.detach().cpu()),
+                    "score_l2": float(l2_score.detach().cpu()),
+                    "score_mse": float(mse_score.detach().cpu()),
+                    "score_max": float(max_score.detach().cpu()),
+                    "discriminator_score": float(dis_score.detach().cpu()),
+                    "latent_radius": float(latent_radius.detach().cpu()),
+                    "image": image,
+                    "reconstruction": recon.squeeze(0).detach().cpu(),
+                    "path": _dataset_sample_path(dataset, index),
+                }
+            )
+
+    return records
+
+
 def collect_quality_snapshot(
     encoder,
     decoder,
@@ -236,6 +326,13 @@ def collect_quality_snapshot(
         "train": train_arrays,
         "val": val_arrays,
         "val_records": val_records,
+        "validation_grid_records": _collect_validation_grid_records(
+            encoder,
+            decoder,
+            discriminator,
+            val_loader,
+            device,
+        ),
         "class_names": class_names,
     }
 
@@ -368,14 +465,14 @@ def _first_record(records, class_names, anomalous):
         is_anomaly = not _is_normal_label(record["label"], class_names)
         if is_anomaly == anomalous:
             return record
-    return records[0] if records else None
+    return None
 
 
 def save_validation_quality_grid(snapshot, output_path):
     """Save fixed validation examples with reconstruction, map, score, and label."""
     output_path = Path(output_path)
     output_path.parent.mkdir(parents=True, exist_ok=True)
-    records = snapshot["val_records"]
+    records = snapshot.get("validation_grid_records") or snapshot["val_records"]
     class_names = snapshot["class_names"]
     selected = [
         ("Normal", _first_record(records, class_names, anomalous=False)),
@@ -393,6 +490,8 @@ def save_validation_quality_grid(snapshot, output_path):
         image = record["image"]
         recon = record["reconstruction"]
         label_name = class_names.get(int(record["label"]), str(record["label"]))
+        sample_path = str(record.get("path", ""))
+        path_hint = f"\n{Path(sample_path).parent.name}/{Path(sample_path).name}" if sample_path else ""
         score = record["score_l1"]
         panels = (
             ("Input", _to_image(image), None),
@@ -402,7 +501,7 @@ def save_validation_quality_grid(snapshot, output_path):
         axes[row_idx, 0].text(
             -0.08,
             0.5,
-            f"{group_name}\n{label_name}",
+            f"{group_name}\n{label_name}{path_hint}",
             transform=axes[row_idx, 0].transAxes,
             rotation=90,
             ha="right",

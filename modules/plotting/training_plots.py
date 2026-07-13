@@ -159,9 +159,10 @@ def save_training_evolution(
     random_image,
     device,
     output_path,
+    anomaly_examples=None,
     interpolation_steps=6,
 ):
-    """Save fixed, random, and latent-interpolation training diagnostics."""
+    """Save normal/anomalous reconstruction and latent-interpolation diagnostics."""
     output_path = Path(output_path)
     output_path.parent.mkdir(parents=True, exist_ok=True)
 
@@ -172,10 +173,13 @@ def save_training_evolution(
 
     fixed_image = fixed_image.detach().cpu()
     random_image = random_image.detach().cpu()
+    anomaly_examples = list(anomaly_examples or [])[:2]
     images = {
         "fixed normal": fixed_image,
         "random normal": random_image,
     }
+    for index, example in enumerate(anomaly_examples, start=1):
+        images[f"anomaly {index}"] = example["image"].detach().cpu()
 
     reconstructions = {}
     with torch.inference_mode():
@@ -195,8 +199,14 @@ def save_training_evolution(
     )
 
     interpolation_cols = max(1, int(np.ceil(interpolation_steps / 2)))
-    n_cols = 3 + interpolation_cols
-    fig, axes = plt.subplots(2, n_cols, figsize=(2.4 * n_cols, 5.2), constrained_layout=True)
+    n_cols = max(3 + interpolation_cols, 6 if anomaly_examples else 0)
+    n_rows = 3 if anomaly_examples else 2
+    fig, axes = plt.subplots(
+        n_rows,
+        n_cols,
+        figsize=(2.4 * n_cols, 2.6 * n_rows),
+        constrained_layout=True,
+    )
 
     row_names = ("Fixed normal sample", "Random normal sample")
     for row_idx, name in enumerate(("fixed normal", "random normal")):
@@ -220,6 +230,35 @@ def save_training_evolution(
         )
         for col_idx, (title, panel, cmap) in enumerate(panels):
             _show_image_panel(axes[row_idx, col_idx], panel, title, cmap=cmap)
+
+    if anomaly_examples:
+        axes[2, 0].text(
+            -0.08,
+            0.5,
+            "Anomalous samples",
+            transform=axes[2, 0].transAxes,
+            rotation=90,
+            ha="right",
+            va="center",
+            fontsize=10,
+            fontweight="bold",
+        )
+        for example_idx, example in enumerate(anomaly_examples):
+            name = f"anomaly {example_idx + 1}"
+            image = images[name]
+            recon = reconstructions[name]
+            class_name = example.get("class_name") or "anomaly"
+            start_col = example_idx * 3
+            panels = (
+                (f"{class_name}\ninput", _to_image(image), None),
+                ("reconstruction", _to_image(recon), None),
+                ("anomaly map", _anomaly_map(image, recon), "magma"),
+            )
+            for offset, (title, panel, cmap) in enumerate(panels):
+                _show_image_panel(axes[2, start_col + offset], panel, title, cmap=cmap)
+
+        for col_idx in range(len(anomaly_examples) * 3, n_cols):
+            axes[2, col_idx].axis("off")
 
     dis_axes = []
     for step_idx in range(interpolation_steps):
@@ -728,6 +767,7 @@ class TrainingPlotter:
         self.max_latent_batches = max(int(max_latent_batches), 1)
         self.max_score_batches = max(int(max_score_batches), 1)
         self.fixed_image = None
+        self.fixed_anomaly_examples = None
 
     def should_plot(self, epoch, total_epochs):
         """Return whether plots should be saved for this epoch."""
@@ -738,6 +778,78 @@ class TrainingPlotter:
         images = next(iter(loader))[0].detach().cpu()
         index = torch.randint(low=0, high=len(images), size=(1,)).item()
         return images[index]
+
+    def _class_name_for_label(self, dataset, label):
+        """Return a display class name for an integer label."""
+        label = int(label)
+        classes = getattr(dataset, "classes", None)
+        if classes is not None and 0 <= label < len(classes):
+            return str(classes[label])
+
+        class_to_idx = getattr(dataset, "class_to_idx", None) or {}
+        for name, idx in class_to_idx.items():
+            if int(idx) == label:
+                return str(name)
+
+        return f"class_{label}"
+
+    def _normal_label_ids(self, dataset):
+        """Return labels that should be treated as normal/non-anomalous."""
+        normal_names = {"good", "normal"}
+        class_to_idx = getattr(dataset, "class_to_idx", None) or {}
+        normal_ids = {
+            int(idx)
+            for name, idx in class_to_idx.items()
+            if str(name).lower() in normal_names
+        }
+        if not normal_ids:
+            normal_ids.add(0)
+        return normal_ids
+
+    def _sample_anomaly_examples(self, loader, max_examples=2):
+        """Return anomalous examples, preferring different anomaly classes."""
+        dataset = getattr(loader, "dataset", None)
+        normal_ids = self._normal_label_ids(dataset)
+        by_label = {}
+
+        for images, labels in loader:
+            images = images.detach().cpu()
+            labels = labels.detach().cpu()
+            for image, label_tensor in zip(images, labels):
+                label = int(label_tensor.item())
+                if label in normal_ids:
+                    continue
+                by_label.setdefault(label, []).append(image)
+            if sum(len(items) for items in by_label.values()) >= max_examples and len(by_label) >= max_examples:
+                break
+
+        examples = []
+        for label in sorted(by_label):
+            if by_label[label]:
+                examples.append(
+                    {
+                        "image": by_label[label][0],
+                        "label": label,
+                        "class_name": self._class_name_for_label(dataset, label),
+                    }
+                )
+            if len(examples) >= max_examples:
+                return examples
+
+        if len(examples) < max_examples:
+            for label in sorted(by_label):
+                for image in by_label[label][1:]:
+                    examples.append(
+                        {
+                            "image": image,
+                            "label": label,
+                            "class_name": self._class_name_for_label(dataset, label),
+                        }
+                    )
+                    if len(examples) >= max_examples:
+                        return examples
+
+        return examples
 
     def on_epoch_end(
         self,
@@ -757,6 +869,8 @@ class TrainingPlotter:
 
         if self.fixed_image is None:
             self.fixed_image = self._sample_normal_image(train_loader)
+        if self.fixed_anomaly_examples is None:
+            self.fixed_anomaly_examples = self._sample_anomaly_examples(val_loader)
         random_image = self._sample_normal_image(train_loader)
 
         if self.plot_curves:
@@ -780,6 +894,7 @@ class TrainingPlotter:
                 random_image,
                 device,
                 self.run_dir / "plots" / "training_evolution" / f"training_evolution_epoch_{epoch:04d}.png",
+                anomaly_examples=self.fixed_anomaly_examples,
             )
 
         if self.plot_latent_space:

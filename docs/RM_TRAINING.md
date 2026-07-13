@@ -120,6 +120,12 @@ For all Models
 python -m modules.training.train --config configs/mvtec_mac.yaml --model all
 ```
 
+Train only the basic autoencoder baseline:
+
+```bash
+python -m modules.training.train --config configs/mvtec_mac.yaml --model basic_ae --force
+```
+
 ```bash
 python -m modules.training.train --config configs/mvtec_mac.yaml --model all --epochs 1 --dry_run
 ```
@@ -178,4 +184,13 @@ python -m modules.training.train --config configs/mvtec_mac.yaml --model vaegan 
 # RUN Web App to see live score and dynamics
 python app.py
 # visit --> http://127.0.0.1:8000
+```
+
+## ADDED AE:
+
+```bash
+# only AE
+python -m modules.training.train --config configs/mvtec_mac.yaml --model basic_ae --force
+# or all models
+python -m modules.training.train --config configs/mvtec_mac.yaml --model all --force
 ```
