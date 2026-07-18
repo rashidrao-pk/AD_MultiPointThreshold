@@ -98,6 +98,19 @@ def _binary_metrics(y_true, scores):
     }
 
 
+def _score_separation_metrics(name, values, is_anomaly):
+    """Return normal/anomalous mean and gap metrics for one score vector."""
+    normal_values = values[~is_anomaly]
+    anomaly_values = values[is_anomaly]
+    normal_mean = _safe_mean(normal_values)
+    anomaly_mean = _safe_mean(anomaly_values)
+    return {
+        f"{name}_normal_mean": normal_mean,
+        f"{name}_anomaly_mean": anomaly_mean,
+        f"{name}_gap": anomaly_mean - normal_mean,
+    }
+
+
 def _append_csv_row(path, row):
     """Append a row to a CSV file while preserving existing columns."""
     path = Path(path)
@@ -321,6 +334,20 @@ def collect_quality_snapshot(
         "threshold_p95": _safe_percentile(train_arrays["score_l1"], 95),
         "threshold_p99": _safe_percentile(train_arrays["score_l1"], 99),
     }
+    for score_name, score_key in (
+        ("l1", "score_l1"),
+        ("l2", "score_l2"),
+        ("mse", "score_mse"),
+        ("max_pixel", "score_max"),
+        ("latent_radius", "latent_radius"),
+    ):
+        metrics.update(
+            _score_separation_metrics(
+                score_name,
+                val_arrays[score_key],
+                val_arrays["is_anomaly"],
+            )
+        )
     return {
         "metrics": metrics,
         "train": train_arrays,
@@ -377,6 +404,7 @@ def save_loss_balance(loss_history, output_path):
     history = pd.DataFrame(loss_history)
     columns = [
         ("recon_loss", "Recon"),
+        ("ae_loss", "AE total"),
         ("beta_kl_loss", "Beta KL"),
         ("beta_gan_loss", "Beta GAN"),
         ("beta_center_loss", "Beta center"),
@@ -385,14 +413,17 @@ def save_loss_balance(loss_history, output_path):
     ]
 
     fig, ax = plt.subplots(figsize=(10.6, 5.8), constrained_layout=True)
+    plotted = False
     for column, label in columns:
         if column in history and history[column].notna().any():
             ax.plot(history["epoch"], history[column], linewidth=1.5, label=label)
+            plotted = True
     ax.set_title("Weighted loss balance")
     ax.set_xlabel("Epoch")
     ax.set_ylabel("Loss contribution")
     ax.grid(True, alpha=0.25)
-    ax.legend(loc="upper left", bbox_to_anchor=(1.02, 1.0), borderaxespad=0)
+    if plotted:
+        ax.legend(loc="upper left", bbox_to_anchor=(1.02, 1.0), borderaxespad=0)
 
     fig.savefig(output_path, dpi=160)
     plt.close(fig)
@@ -410,17 +441,33 @@ def save_score_components(snapshot, output_path):
         ("score_l2", "L2"),
         ("score_mse", "MSE"),
         ("score_max", "Max pixel"),
-        ("discriminator_score", "Discriminator"),
     ]
+    if "discriminator_score" in val and np.isfinite(val["discriminator_score"]).any():
+        components.append(("discriminator_score", "Discriminator"))
 
     fig, axes = plt.subplots(1, len(components), figsize=(3.0 * len(components), 4.8), constrained_layout=True)
+    axes = np.atleast_1d(axes)
     for ax, (key, title) in zip(axes, components):
         normal = val[key][~is_anomaly]
         anomaly = val[key][is_anomaly]
         data = [normal[np.isfinite(normal)], anomaly[np.isfinite(anomaly)]]
-        ax.boxplot(data, labels=["Normal", "Anomalous"], showfliers=False, patch_artist=True)
-        ax.scatter(np.full(len(data[0]), 1), data[0], s=9, alpha=0.35, color="forestgreen")
-        ax.scatter(np.full(len(data[1]), 2), data[1], s=9, alpha=0.35, color="darkorange")
+        if any(len(values) for values in data):
+            box_data = [values for values in data if len(values)]
+            positions = [idx + 1 for idx, values in enumerate(data) if len(values)]
+            labels = [label for label, values in zip(["Normal", "Anomalous"], data) if len(values)]
+            ax.boxplot(
+                box_data,
+                positions=positions,
+                labels=labels,
+                showfliers=False,
+                patch_artist=True,
+            )
+            ax.scatter(np.full(len(data[0]), 1), data[0], s=9, alpha=0.35, color="forestgreen")
+            ax.scatter(np.full(len(data[1]), 2), data[1], s=9, alpha=0.35, color="darkorange")
+            ax.set_xlim(0.5, 2.5)
+        else:
+            ax.text(0.5, 0.5, "No finite values", transform=ax.transAxes, ha="center", va="center")
+            ax.set_xticks([])
         ax.set_title(title)
         ax.grid(True, axis="y", alpha=0.25)
         ax.tick_params(axis="x", rotation=20)

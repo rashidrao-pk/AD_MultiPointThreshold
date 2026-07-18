@@ -114,17 +114,25 @@ python -m modules.training.train --config configs/cobots_xn2.yaml --dataset Cobo
 python -m modules.training.train --config configs/mvtec_xn2.yaml --dataset MVTec --model all --force
 ```
 
-For all Models
+For all registered trainable models: ADVIS VAE-GAN, vanilla VAE, and basic AE.
 
 ```bash
-python -m modules.training.train --config configs/mvtec_mac.yaml --model all
+python -m modules.training.train --config configs/mvtec_mac.yaml --model all --plot_all --latent_space_classes both
+```
+
+Train only the vanilla VAE baseline:
+
+```bash
+python -m modules.training.train --config configs/mvtec_mac.yaml --model vanilla_vae --force --plot_all --latent_space_classes both
 ```
 
 Train only the basic autoencoder baseline:
 
 ```bash
-python -m modules.training.train --config configs/mvtec_mac.yaml --model basic_ae --force
+python -m modules.training.train --config configs/mvtec_mac.yaml --model basic_ae --force --plot_all --latent_space_classes both
 ```
+
+`--plot_all` saves training curves, reconstruction evolution, latent space, score distribution, quality metrics, score components, latent radius, loss balance, and validation grid.
 
 ```bash
 python -m modules.training.train --config configs/mvtec_mac.yaml --model all --epochs 1 --dry_run
@@ -190,7 +198,7 @@ python app.py
 
 ```bash
 # only AE
-python -m modules.training.train --config configs/mvtec_mac.yaml --model basic_ae --force
+python -m modules.training.train --config configs/mvtec_mac.yaml --model basic_ae --force --plot_all --latent_space_classes both
 # or all models
 python -m modules.training.train --config configs/mvtec_mac.yaml --model all --force
 ```

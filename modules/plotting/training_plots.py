@@ -32,12 +32,21 @@ def save_training_curves(loss_history, output_path):
     history = pd.DataFrame(loss_history)
 
     fig, axes = plt.subplots(2, 2, figsize=(14, 8), constrained_layout=True)
-    for ax, column, title in (
+    model_loss_column = "ae_loss" if "ae_loss" in history else "vae_loss"
+    if model_loss_column == "ae_loss":
+        model_loss_title = "Autoencoder loss"
+    elif "gan_loss" in history:
+        model_loss_title = "VAE-GAN generator loss"
+    else:
+        model_loss_title = "VAE loss"
+    curve_specs = [
         (axes[0, 0], "recon_loss", "Reconstruction loss"),
-        (axes[0, 1], "vae_loss", "VAE-GAN generator loss"),
+        (axes[0, 1], model_loss_column, model_loss_title),
         (axes[1, 0], "disc_loss", "Discriminator loss"),
         (axes[1, 1], "val_recon_loss", "Validation reconstruction loss"),
-    ):
+    ]
+
+    for ax, column, title in curve_specs:
         if column in history:
             ax.plot(history["epoch"], history[column], linewidth=1.3)
             ax.set_title(title)

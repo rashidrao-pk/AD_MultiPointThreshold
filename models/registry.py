@@ -2,6 +2,8 @@ from models.vaegan.loader import load_model as load_advis_vaegan_checkpoint
 from models.vaegan.trainer import train_model as train_vaegan
 from models.ae.loader import load_model as load_basic_ae_checkpoint
 from models.ae.trainer import train_model as train_basic_ae
+from models.vae.loader import load_model as load_vanilla_vae_checkpoint
+from models.vae.trainer import train_model as train_vanilla_vae
 
 
 MODEL_ALIASES = {
@@ -20,6 +22,9 @@ MODEL_ALIASES = {
     "basic_ae": "basic_ae",
     "autoencoder": "basic_ae",
     "basic_autoencoder": "basic_ae",
+    "vae": "vanilla_vae",
+    "vanilla_vae": "vanilla_vae",
+    "variational_autoencoder": "vanilla_vae",
 }
 
 
@@ -42,6 +47,12 @@ MODEL_INFO = {
         "has_pretrained_loader": True,
         "trainable": True,
     },
+    "vanilla_vae": {
+        "display_name": "Vanilla VAE",
+        "description": "Variational autoencoder baseline using reconstruction plus KL loss and no discriminator.",
+        "has_pretrained_loader": True,
+        "trainable": True,
+    },
 }
 
 
@@ -60,12 +71,19 @@ def get_trainer(name):
         return train_vaegan
     if model_name == "basic_ae":
         return train_basic_ae
+    if model_name == "vanilla_vae":
+        return train_vanilla_vae
     raise ValueError(f"No trainer registered for model: {name}")
 
 
 def list_trainable_models():
     """Return canonical model names that should run for --model all."""
-    return [name for name, info in MODEL_INFO.items() if info.get("trainable")]
+    preferred_order = ["advis_vaegan", "vanilla_vae", "basic_ae"]
+    return [
+        name
+        for name in preferred_order
+        if MODEL_INFO.get(name, {}).get("trainable")
+    ]
 
 
 def get_checkpoint_loader(name):
@@ -75,6 +93,8 @@ def get_checkpoint_loader(name):
         return load_advis_vaegan_checkpoint
     if model_name == "basic_ae":
         return load_basic_ae_checkpoint
+    if model_name == "vanilla_vae":
+        return load_vanilla_vae_checkpoint
     raise ValueError(f"No checkpoint loader registered for model: {name}")
 
 

@@ -347,6 +347,11 @@ def parse_args():
         help="Save training-curve plots during training.",
     )
     parser.add_argument(
+        "--plot_all",
+        action="store_true",
+        help="Save every available training diagnostic plot for the selected model.",
+    )
+    parser.add_argument(
         "--plot_every",
         type=int,
         default=10,
@@ -503,16 +508,21 @@ def _run_training_for_model(args, project_root, config_path, base_config, model_
         print("[dry_run] stopping before trainer dispatch")
         return None
 
+    plot_curves = args.plot_curves or args.plot_all
+    plot_latent_space = args.plot_latent_space or args.plot_all
+    plot_score_distribution = args.plot_score_distribution or args.plot_all
+    plot_quality = args.plot_quality or args.plot_all
+
     training_plotter = None
-    if args.plot_curves or args.plot_latent_space or args.plot_score_distribution or args.plot_quality:
+    if plot_curves or plot_latent_space or plot_score_distribution or plot_quality:
         from modules.plotting import TrainingPlotter
 
         training_plotter = TrainingPlotter(
             run_dir=run_dir,
-            plot_curves=args.plot_curves,
-            plot_latent_space=args.plot_latent_space,
-            plot_score_distribution=args.plot_score_distribution,
-            plot_quality=args.plot_quality,
+            plot_curves=plot_curves,
+            plot_latent_space=plot_latent_space,
+            plot_score_distribution=plot_score_distribution,
+            plot_quality=plot_quality,
             latent_space_classes=args.latent_space_classes,
             latent_projection=args.latent_projection,
             plot_every=args.plot_every,
@@ -521,12 +531,12 @@ def _run_training_for_model(args, project_root, config_path, base_config, model_
         )
         print(
             "[plots] "
-            f"curves={args.plot_curves} every={args.plot_every} "
-            f"latent={args.plot_latent_space} "
+            f"curves={plot_curves} every={args.plot_every} "
+            f"latent={plot_latent_space} "
             f"latent_classes={args.latent_space_classes} "
             f"latent_projection={args.latent_projection} "
-            f"score_distribution={args.plot_score_distribution} "
-            f"quality={args.plot_quality}"
+            f"score_distribution={plot_score_distribution} "
+            f"quality={plot_quality}"
         )
 
     result = trainer(
