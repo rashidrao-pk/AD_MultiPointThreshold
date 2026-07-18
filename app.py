@@ -7,6 +7,7 @@ import re
 import csv
 import time
 import argparse
+import errno
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from urllib.parse import parse_qs, unquote, urlparse
@@ -20,6 +21,8 @@ EXPERIMENTS_ROOT = ROOT / "results" / "experiments"
 CONFIGS_ROOT = ROOT / "configs"
 DEFAULT_HOST = "127.0.0.1"
 DEFAULT_PORT = 8000
+PORT_FALLBACK_OFFSET = 5
+PORT_FALLBACK_STEPS = 6
 
 PLOT_TYPES = {
     "curves": ("plots/training_curves", "training_curves_epoch_"),
@@ -704,11 +707,39 @@ def parse_args():
     return parser.parse_args()
 
 
+def _candidate_ports(port):
+    """Yield the requested port followed by fallback ports starting at +5."""
+    yield port
+    for offset in range(PORT_FALLBACK_OFFSET, PORT_FALLBACK_OFFSET + PORT_FALLBACK_STEPS):
+        yield port + offset
+
+
+def _create_server(host, port):
+    """Create a server, falling back to nearby ports when the first port is busy."""
+    last_error = None
+    for candidate_port in _candidate_ports(port):
+        try:
+            server = ThreadingHTTPServer((host, candidate_port), TrainingViewerHandler)
+            if candidate_port != port:
+                print(f"[!] Port {port} is not available; using {candidate_port} instead.")
+            return server, candidate_port
+        except OSError as error:
+            last_error = error
+            if error.errno not in {errno.EADDRINUSE, errno.EACCES}:
+                raise
+            print(f"[!] Port {candidate_port} is not available.")
+
+    raise OSError(
+        f"No available port found for {host}; tried "
+        f"{', '.join(str(item) for item in _candidate_ports(port))}"
+    ) from last_error
+
+
 def main():
     """Run the live training plot viewer."""
     args = parse_args()
-    server = ThreadingHTTPServer((args.host, args.port), TrainingViewerHandler)
-    url = f"http://{args.host}:{args.port}/training"
+    server, port = _create_server(args.host, args.port)
+    url = f"http://{args.host}:{port}/training"
     print(f"[+] Training viewer: {url}")
     print("[+] Press Ctrl+C to stop.")
     try:
