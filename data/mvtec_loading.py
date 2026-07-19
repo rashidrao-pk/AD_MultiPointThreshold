@@ -13,15 +13,9 @@ def get_dataloaders_mvtec(cfg):
         augmentation=getattr(cfg, "augmentation", "none"),
     )
 
-    train_dataset = datasets.ImageFolder(
-        root=root / "train",
-        transform=train_transform
-    )
+    train_dataset = datasets.ImageFolder(root=root / "train", transform=train_transform)
 
-    test_dataset = datasets.ImageFolder(
-        root=root / "test",
-        transform=eval_transform
-    )
+    test_dataset = datasets.ImageFolder(root=root / "test", transform=eval_transform)
 
     train_loader = DataLoader(
         train_dataset,

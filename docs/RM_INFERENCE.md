@@ -38,11 +38,21 @@ python -m experiments.run_vaegan --config configs/mvtec_mac.yaml --force \
   --set scoring.method=reconstruction_l2
 ```
 
+## DATASET wise experiemnts
+
+````bash
+python -m experiments.run_vaegan --config configs/mvtec_mac.yaml --dataset MVTec --force
+
+python -m experiments.run_vaegan --config configs/cobots_mac.yaml --dataset Cobots_Synthetic --force
+
+python -m experiments.run_vaegan --config configs/hazards_mac.yaml --force
+
+
 ## PLOT Results:
 
 ```bash
 python -m modules.plotting.plot_experiment_results --run_dir results/experiments/E00008
-```
+````
 
 ```bash
 # RUN Web App to see live score and dynamics

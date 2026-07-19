@@ -92,7 +92,7 @@ def subset_indices(dataset, max_samples=None):
     remaining = max_samples - len(selected)
     if remaining > 0:
         selected_set = set(selected)
-        selected.extend(idx for idx in range(len(dataset)) if idx not in selected_set) 
+        selected.extend(idx for idx in range(len(dataset)) if idx not in selected_set)
         selected = selected[:max_samples]
 
     return sorted(selected[:max_samples])

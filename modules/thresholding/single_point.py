@@ -21,9 +21,6 @@ class SinglePointThreshold(ThresholdModel):
 def fit_single_point(scores, percentile=95):
     """Fit a scalar threshold from a percentile of training scores."""
 
-    threshold = torch.quantile(
-        scores.float().view(-1),
-        percentile/100
-    )
+    threshold = torch.quantile(scores.float().view(-1), percentile / 100)
 
     return SinglePointThreshold(threshold)

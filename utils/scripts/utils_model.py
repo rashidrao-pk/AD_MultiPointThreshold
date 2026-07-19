@@ -3,7 +3,7 @@ import pandas as pd
 
 import torch
 import torch.nn as nn
-import torch.nn.functional as F
+
 try:
     import torchvision.models as models
 except Exception:
@@ -14,33 +14,39 @@ import torch.optim as optim
 import json
 from datetime import datetime
 
-def resolve_device(requested='auto'):
+import platform
+
+
+def resolve_device(requested="auto"):
     """Return torch.device for auto/cuda/mps/cpu. Auto prefers CUDA, then Apple MPS, then CPU."""
-    requested = str(requested or 'auto').lower()
-    if requested == 'auto':
+    requested = str(requested or "auto").lower()
+    if requested == "auto":
         if torch.cuda.is_available():
-            return torch.device('cuda')
-        if getattr(torch.backends, 'mps', None) is not None and torch.backends.mps.is_available():
-            return torch.device('mps')
-        return torch.device('cpu')
-    if requested == 'cuda' and not torch.cuda.is_available():
-        return torch.device('cpu')
-    if requested == 'mps':
-        mps_ok = getattr(torch.backends, 'mps', None) is not None and torch.backends.mps.is_available()
+            return torch.device("cuda")
+        if getattr(torch.backends, "mps", None) is not None and torch.backends.mps.is_available():
+            return torch.device("mps")
+        return torch.device("cpu")
+    if requested == "cuda" and not torch.cuda.is_available():
+        return torch.device("cpu")
+    if requested == "mps":
+        mps_ok = (
+            getattr(torch.backends, "mps", None) is not None and torch.backends.mps.is_available()
+        )
         if not mps_ok:
-            return torch.device('cpu')
+            return torch.device("cpu")
     return torch.device(requested)
 
 
 global device
-device = resolve_device('auto')
+device = resolve_device("auto")
+
 
 ############################################################################
 ########################################################
 def get_anomaly_score(recon_batch, data_batch):
     """Compute a max-over-spatial anomaly score from reconstruction error."""
     # Keep tensors on the device they already use. This avoids accidental CUDA moves on Mac/CPU.
-    local_device = recon_batch.device if hasattr(recon_batch, 'device') else device
+    local_device = recon_batch.device if hasattr(recon_batch, "device") else device
     data_batch = data_batch.to(local_device)
     recon_batch = recon_batch.to(local_device)
     # print(data_batch.shape, recon_batch.shape)
@@ -49,6 +55,7 @@ def get_anomaly_score(recon_batch, data_batch):
     max_score = mean_diff.max(dim=-1).values.max(dim=-1).values
     return max_score
 
+
 ############################################################################
 # Reparameterization trick
 def reparameterize(mu, logvar):
@@ -56,6 +63,8 @@ def reparameterize(mu, logvar):
     std = torch.exp(0.5 * logvar)
     eps = torch.randn_like(std)
     return mu + eps * std
+
+
 ############################################################################
 def get_reconstructed(Enc, Dec, data_, device=None):
     """Run encoder and decoder to reconstruct an input batch."""
@@ -64,8 +73,9 @@ def get_reconstructed(Enc, Dec, data_, device=None):
     mu, logvar = Enc(data_)
     z = reparameterize(mu, logvar)
     recon_ = Dec(z)
-    del data_, mu,logvar,z
-    return recon_#.to(device)
+    del data_, mu, logvar, z
+    return recon_  # .to(device)
+
 
 ############################################################################
 def model_override(model_path, suffix):
@@ -74,13 +84,14 @@ def model_override(model_path, suffix):
     new_model = os.path.join(model_path, f"model_{suffix}_old.pt")
     if os.path.exists(model_path_):
         os.rename(model_path_, new_model)
-        print(f'file renamed from  ')
-        print(model_path_,'->', new_model)
+        print("file renamed from  ")
+        print(model_path_, "->", new_model)
     else:
-        print(f'Path not exist ', model_path_)
+        print("Path not exist ", model_path_)
 
 
 ########################################################################################################################################################
+
 
 # Encoder
 class Encoder(nn.Module):
@@ -90,15 +101,15 @@ class Encoder(nn.Module):
         """Initialize convolutional layers and latent projection heads."""
         super(Encoder, self).__init__()
         self.conv_layers = nn.Sequential(
-            nn.Conv2d(3, 64, kernel_size=4, stride=2, padding=1),   # 128x128 -> 64x64
+            nn.Conv2d(3, 64, kernel_size=4, stride=2, padding=1),  # 128x128 -> 64x64
             nn.ReLU(),
             nn.Conv2d(64, 128, kernel_size=4, stride=2, padding=1),  # 64x64 -> 32x32
             nn.ReLU(),
-            nn.Conv2d(128, 256, kernel_size=4, stride=2, padding=1), # 32x32 -> 16x16
+            nn.Conv2d(128, 256, kernel_size=4, stride=2, padding=1),  # 32x32 -> 16x16
             nn.ReLU(),
-            nn.Conv2d(256, 512, kernel_size=4, stride=2, padding=1), # 16x16 -> 8x8
+            nn.Conv2d(256, 512, kernel_size=4, stride=2, padding=1),  # 16x16 -> 8x8
             nn.ReLU(),
-            nn.Flatten()
+            nn.Flatten(),
         )
         self.fc_mu = nn.Linear(512 * 8 * 8, z_size)
         self.fc_logvar = nn.Linear(512 * 8 * 8, z_size)
@@ -109,6 +120,7 @@ class Encoder(nn.Module):
         mu = self.fc_mu(h)
         logvar = self.fc_logvar(h)
         return mu, logvar
+
 
 # Decoder
 class Decoder(nn.Module):
@@ -123,12 +135,12 @@ class Decoder(nn.Module):
             nn.Unflatten(1, (512, 8, 8)),
             nn.ConvTranspose2d(512, 256, kernel_size=4, stride=2, padding=1),  # 8x8 -> 16x16
             nn.ReLU(),
-            nn.ConvTranspose2d(256, 128, kernel_size=4, stride=2, padding=1),   # 16x16 -> 32x32
+            nn.ConvTranspose2d(256, 128, kernel_size=4, stride=2, padding=1),  # 16x16 -> 32x32
             nn.ReLU(),
-            nn.ConvTranspose2d(128, 64, kernel_size=4, stride=2, padding=1),    # 32x32 -> 64x64
+            nn.ConvTranspose2d(128, 64, kernel_size=4, stride=2, padding=1),  # 32x32 -> 64x64
             nn.ReLU(),
-            nn.ConvTranspose2d(64, 3, kernel_size=4, stride=2, padding=1),      # 64x64 -> 128x128
-            nn.Tanh()  # Output scaled between -1 and 1
+            nn.ConvTranspose2d(64, 3, kernel_size=4, stride=2, padding=1),  # 64x64 -> 128x128
+            nn.Tanh(),  # Output scaled between -1 and 1
         )
 
     def forward(self, z):
@@ -136,6 +148,7 @@ class Decoder(nn.Module):
         h = self.fc(z)
         h = self.deconv_layers(h)
         return h
+
 
 # Define the model for blur/fake detection
 class Discriminator(nn.Module):
@@ -148,11 +161,9 @@ class Discriminator(nn.Module):
             nn.Conv2d(3, 32, kernel_size=3, stride=1, padding=1),
             nn.ReLU(),
             nn.MaxPool2d(2, 2),
-            
             nn.Conv2d(32, 64, kernel_size=3, stride=1, padding=1),
             nn.ReLU(),
             nn.MaxPool2d(2, 2),
-            
             nn.Conv2d(64, 128, kernel_size=3, stride=1, padding=1),
             nn.ReLU(),
             nn.MaxPool2d(2, 2),
@@ -165,12 +176,13 @@ class Discriminator(nn.Module):
             nn.Linear(256, 1),
             # nn.Sigmoid()
         )
-    
+
     def forward(self, x):
         """Return discriminator logits for an image batch."""
         x = self.conv_layers(x)
         x = self.fc_layers(x)
         return x
+
 
 ########################################################################################################################################################
 # def save_model(Enc, Dec, D, optEncDec, optD, paths, loss_history, suffix, verbose = False):
@@ -186,7 +198,7 @@ class Discriminator(nn.Module):
 #         'optimizer_dec_state_dict': optD.state_dict(),
 #         'loss_history':            pd.DataFrame(loss_history)
 #         }, model_path)
-    
+
 #     # print(f"Model saved at epoch {epoch} to {model_path}")
 #     # return last_saved_epoch
 
@@ -198,12 +210,12 @@ class Discriminator(nn.Module):
 #         if verbose:
 #             print(f' path {model_path} --> {os.path.exists(model_path)} ')
 #         return []
-    
+
 #     checkpoint = torch.load(model_path,
 #                              map_location=device,
 #                              weights_only=False        # allow non-weight objects (e.g., pandas DF)
 #                              )
-    
+
 #     Enc.load_state_dict      (checkpoint['encoder_state_dict'])
 #     Dec.load_state_dict      (checkpoint['decoder_state_dict'])
 #     D.load_state_dict(checkpoint['discriminator_state_dict'])
@@ -216,19 +228,14 @@ class Discriminator(nn.Module):
 #     # print(f"Model loaded from epoch {last_saved_epoch}")
 #     return loss_history
 
+
 def safe_transform_to_string(transform_obj):
     """Convert augmentation/transform pipeline to readable string."""
     try:
         return str(transform_obj)
     except Exception:
         return "Unavailable"
-import os
-import json
-import platform
-from datetime import datetime
 
-import pandas as pd
-import torch
 
 def make_json_safe(obj):
     """Convert nested objects into JSON-serializable values."""
@@ -263,15 +270,15 @@ def save_model(
     train_dir=None,
     notes=None,
     verbose=False,
-    model_variant = 'old',
+    model_variant="old",
 ):
     """Save model weights, optimizer states, training history, and metadata."""
-    if model_variant=='old':
-        optEncDec_name  =   'optimizer_enc_state_dict'
-        optD_name       =   'optimizer_dec_state_dict'
+    if model_variant == "old":
+        optEncDec_name = "optimizer_enc_state_dict"
+        optD_name = "optimizer_dec_state_dict"
     else:
-        optEncDec_name  =   'optimizer_encdec_state_dict'
-        optD_name       =   'optimizer_d_state_dict'
+        optEncDec_name = "optimizer_encdec_state_dict"
+        optD_name = "optimizer_d_state_dict"
 
     os.makedirs(path_models, exist_ok=True)
 
@@ -323,7 +330,9 @@ def save_model(
         "cudnn_version": torch.backends.cudnn.version() if cuda_available else None,
         "gpu_count": torch.cuda.device_count() if cuda_available else 0,
         "current_gpu_index": torch.cuda.current_device() if cuda_available else None,
-        "current_gpu_name": torch.cuda.get_device_name(torch.cuda.current_device()) if cuda_available else None,
+        "current_gpu_name": torch.cuda.get_device_name(torch.cuda.current_device())
+        if cuda_available
+        else None,
         "gpu_properties": None,
         "memory": None,
     }
@@ -335,7 +344,7 @@ def save_model(
         gpu_info["gpu_properties"] = {
             "name": props.name,
             "total_memory_bytes": props.total_memory,
-            "total_memory_gb": round(props.total_memory / (1024 ** 3), 2),
+            "total_memory_gb": round(props.total_memory / (1024**3), 2),
             "multi_processor_count": getattr(props, "multi_processor_count", None),
             "major": getattr(props, "major", None),
             "minor": getattr(props, "minor", None),
@@ -345,13 +354,13 @@ def save_model(
             free_mem, total_mem = torch.cuda.mem_get_info(dev_idx)
             gpu_info["memory"] = {
                 "free_bytes": free_mem,
-                "free_gb": round(free_mem / (1024 ** 3), 2),
+                "free_gb": round(free_mem / (1024**3), 2),
                 "total_bytes": total_mem,
-                "total_gb": round(total_mem / (1024 ** 3), 2),
+                "total_gb": round(total_mem / (1024**3), 2),
                 "allocated_bytes": torch.cuda.memory_allocated(dev_idx),
-                "allocated_gb": round(torch.cuda.memory_allocated(dev_idx) / (1024 ** 3), 2),
+                "allocated_gb": round(torch.cuda.memory_allocated(dev_idx) / (1024**3), 2),
                 "reserved_bytes": torch.cuda.memory_reserved(dev_idx),
-                "reserved_gb": round(torch.cuda.memory_reserved(dev_idx) / (1024 ** 3), 2),
+                "reserved_gb": round(torch.cuda.memory_reserved(dev_idx) / (1024**3), 2),
             }
         except Exception:
             gpu_info["memory"] = None
@@ -377,28 +386,21 @@ def save_model(
         "suffix": suffix,
         "epoch": epoch,
         "epochs_trained": len(loss_history_to_save),
-
         "dataset": {
             "dataset_name": dataset_name,
             "train_dir": train_dir,
             "n_train_images": n_train_images,
             "n_val_images": n_val_images,
         },
-
         "training": {
             "batch_size": batch_size,
             "num_workers": num_workers,
             "pin_memory": pin_memory,
             "device": device_type,
         },
-
         "system": system_info,
         "gpu": gpu_info,
-
-        "augmentation": {
-            "pipeline": safe_transform_to_string(augmentation)
-        },
-
+        "augmentation": {"pipeline": safe_transform_to_string(augmentation)},
         "params": make_json_safe(params) if params is not None else {},
         "notes": notes,
     }
@@ -436,18 +438,29 @@ def save_model(
             if gpu_info["memory"] is not None:
                 print(f"GPU total memory: {gpu_info['memory']['total_gb']} GB")
 
+
 #############################################################################################################
 
-def load_model(Enc, Dec, D, optEncDec, optD, path_models, suffix, verbose=False,
-                device='cuda',
-                model_variant = 'new'):
+
+def load_model(
+    Enc,
+    Dec,
+    D,
+    optEncDec,
+    optD,
+    path_models,
+    suffix,
+    verbose=False,
+    device="cuda",
+    model_variant="new",
+):
     """Load model weights, optimizer states, loss history, and metadata."""
-    if model_variant=='old':
-        optEncDec_name  =   'optimizer_enc_state_dict'
-        optD_name       =   'optimizer_dec_state_dict'
+    if model_variant == "old":
+        optEncDec_name = "optimizer_enc_state_dict"
+        optD_name = "optimizer_dec_state_dict"
     else:
-        optEncDec_name  =   'optimizer_encdec_state_dict'
-        optD_name       =   'optimizer_d_state_dict'
+        optEncDec_name = "optimizer_encdec_state_dict"
+        optD_name = "optimizer_d_state_dict"
 
     model_path = os.path.join(path_models, f"model_{suffix}.pt")
 
@@ -461,13 +474,13 @@ def load_model(Enc, Dec, D, optEncDec, optD, path_models, suffix, verbose=False,
 
     # Load checkpoint on CPU first. This is safest across CUDA, Apple MPS, and CPU-only machines.
     try:
-        checkpoint = torch.load(model_path, map_location='cpu', weights_only=False)
+        checkpoint = torch.load(model_path, map_location="cpu", weights_only=False)
     except TypeError:
-        checkpoint = torch.load(model_path, map_location='cpu')
+        checkpoint = torch.load(model_path, map_location="cpu")
 
-    Enc.load_state_dict(checkpoint['encoder_state_dict'])
-    Dec.load_state_dict(checkpoint['decoder_state_dict'])
-    D.load_state_dict(checkpoint['discriminator_state_dict'])
+    Enc.load_state_dict(checkpoint["encoder_state_dict"])
+    Dec.load_state_dict(checkpoint["decoder_state_dict"])
+    D.load_state_dict(checkpoint["discriminator_state_dict"])
     if optEncDec_name in checkpoint:
         optEncDec.load_state_dict(checkpoint[optEncDec_name])
     if optD_name in checkpoint:
@@ -477,9 +490,9 @@ def load_model(Enc, Dec, D, optEncDec, optD, path_models, suffix, verbose=False,
     Dec.to(device)
     D.to(device)
 
-    loss_history_raw = checkpoint.get('loss_history', [])
+    loss_history_raw = checkpoint.get("loss_history", [])
     if hasattr(loss_history_raw, "to_dict"):
-        loss_history = loss_history_raw.to_dict('records')
+        loss_history = loss_history_raw.to_dict("records")
     else:
         loss_history = loss_history_raw
 
@@ -489,7 +502,7 @@ def load_model(Enc, Dec, D, optEncDec, optD, path_models, suffix, verbose=False,
     if verbose:
         print(f"Loaded model from {model_path}")
         print(f"Model loaded at epoch {last_saved_epoch}")
-        # print(f"Model saved at  {config.get('saved_at', {})}")   
+        # print(f"Model saved at  {config.get('saved_at', {})}")
 
         if config is not None:
             print("Loaded config:")
@@ -507,7 +520,7 @@ def load_model(Enc, Dec, D, optEncDec, optD, path_models, suffix, verbose=False,
 ############################################################################
 
 
-def get_loss_functions (verbose=True):
+def get_loss_functions(verbose=True):
     """Create reconstruction and adversarial loss functions."""
     reconstruction_loss_fn = nn.MSELoss()  # L2 reconstruction loss
     adversarial_loss_fn = nn.BCEWithLogitsLoss()  # For GAN
@@ -516,11 +529,17 @@ def get_loss_functions (verbose=True):
         print("Reconstruction Loss Function: ", reconstruction_loss_fn)
         print("Adversarial Loss Function: ", adversarial_loss_fn)
     return reconstruction_loss_fn, adversarial_loss_fn
+
+
 ############################################################################
 
 
-def get_optimizers (Enc,Dec,Dis,learning_rate_enc_dec=0.001,learning_rate_dis=0.0001, verbose=True):
+def get_optimizers(
+    Enc, Dec, Dis, learning_rate_enc_dec=0.001, learning_rate_dis=0.0001, verbose=True
+):
     """Create optimizers for the encoder-decoder pair and discriminator."""
-    optEncDec = optim.Adam(list(Enc.parameters()) + list(Dec.parameters()), lr=learning_rate_enc_dec)
+    optEncDec = optim.Adam(
+        list(Enc.parameters()) + list(Dec.parameters()), lr=learning_rate_enc_dec
+    )
     optDis = optim.Adam(Dis.parameters(), lr=learning_rate_dis)
     return optEncDec, optDis

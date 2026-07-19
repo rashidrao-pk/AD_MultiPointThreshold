@@ -227,7 +227,9 @@ def _publish_best_checkpoint(run_dir, checkpoint_path):
 
 def parse_args():
     """Parse command-line arguments for the training entry point."""
-    parser = argparse.ArgumentParser(description="Train anomaly-detection models from a config file.")
+    parser = argparse.ArgumentParser(
+        description="Train anomaly-detection models from a config file."
+    )
     parser.add_argument("--config", required=True, help="Path to YAML config.")
     parser.add_argument("--model", default=None, help="Override config.model.name.")
     parser.add_argument("--epochs", type=int, default=None, help="Override training.epochs.")
@@ -267,7 +269,9 @@ def parse_args():
         default=8,
         help="Maximum validation batches to encode for each latent-space plot.",
     )
-    parser.add_argument("--dry_run", action="store_true", help="Load data and create run dir, then stop.")
+    parser.add_argument(
+        "--dry_run", action="store_true", help="Load data and create run dir, then stop."
+    )
     return parser.parse_args()
 
 
@@ -302,9 +306,7 @@ def main():
 
     checkpoint_path = _inference_checkpoint_path(config)
     publish_checkpoint_path = (
-        _forced_checkpoint_path(config, checkpoint_path)
-        if args.force
-        else checkpoint_path
+        _forced_checkpoint_path(config, checkpoint_path) if args.force else checkpoint_path
     )
     checkpoint_info = _read_checkpoint_info(checkpoint_path)
     if checkpoint_info is not None and not args.force:

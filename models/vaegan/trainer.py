@@ -34,7 +34,7 @@ def _svdd_loss(distances_sq, radius=0.0, nu=0.1):
     if radius <= 0.0:
         return torch.mean(distances_sq)
 
-    radius_sq = radius ** 2
+    radius_sq = radius**2
     return radius_sq + torch.mean(torch.relu(distances_sq - radius_sq)) / nu
 
 
@@ -198,7 +198,9 @@ def train_model(
     decoder = Decoder(z_size=latent_dim).to(device)
     discriminator = Discriminator().to(device)
     latent_center = torch.zeros(latent_dim, device=device)
-    optimizer_enc_dec = optim.Adam(list(encoder.parameters()) + list(decoder.parameters()), lr=lr_enc_dec)
+    optimizer_enc_dec = optim.Adam(
+        list(encoder.parameters()) + list(decoder.parameters()), lr=lr_enc_dec
+    )
     optimizer_dis = optim.Adam(discriminator.parameters(), lr=lr_dis)
 
     dataset_summary = build_dataset_summary(

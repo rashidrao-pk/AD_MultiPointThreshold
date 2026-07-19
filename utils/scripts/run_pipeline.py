@@ -79,7 +79,9 @@ def _resolve_project_paths(config, project_root):
 def _get_experiment_models(config):
     """Return the model names configured for the experiment sweep."""
     experiment = getattr(config, "experiment", None)
-    return _as_list(getattr(experiment, "models", None), [getattr(config.model, "name", "advis_vaegan")])
+    return _as_list(
+        getattr(experiment, "models", None), [getattr(config.model, "name", "advis_vaegan")]
+    )
 
 
 def _get_scoring_setups(config):
@@ -111,8 +113,10 @@ def _run_dir(config, suffix=""):
     """Build the output directory path for a pipeline run."""
     timestamp = time.strftime("%Y_%m_%d_%H_%M_%S")
     suffix_part = f"_{suffix}" if suffix else ""
-    return Path(config.output.dir) / "pipeline" / (
-        f"{config.data.name}_{getattr(config.data, 'category', 'all')}_{timestamp}{suffix_part}"
+    return (
+        Path(config.output.dir)
+        / "pipeline"
+        / (f"{config.data.name}_{getattr(config.data, 'category', 'all')}_{timestamp}{suffix_part}")
     )
 
 
@@ -142,7 +146,9 @@ def parse_args():
     parser.add_argument("--suffix", default="")
     parser.add_argument("--device", default=None)
     parser.add_argument("--epochs", type=int, default=None)
-    parser.add_argument("--skip_train", action="store_true", help="Use configured pretrained checkpoints.")
+    parser.add_argument(
+        "--skip_train", action="store_true", help="Use configured pretrained checkpoints."
+    )
     parser.add_argument("--dry_run", action="store_true")
     return parser.parse_args()
 
@@ -250,7 +256,9 @@ def main():
                 threshold_config = _clone_config(score_config)
                 threshold_config.threshold.method = threshold_setup.method
                 threshold_config.threshold.percentile = threshold_setup.percentile
-                threshold_config.threshold.decision_rule = getattr(threshold_setup, "decision_rule", "any")
+                threshold_config.threshold.decision_rule = getattr(
+                    threshold_setup, "decision_rule", "any"
+                )
 
                 if threshold_config.threshold.method == "multi_point" and train_scores.dim() != 2:
                     print(
@@ -269,7 +277,9 @@ def main():
                 predictions = threshold_model.predict(test_scores)
 
                 rank_metrics = ranking_metrics(_ranking_scores(test_scores), binary_test_labels)
-                thr_metrics = threshold_metrics(predictions.detach().cpu().numpy(), binary_test_labels)
+                thr_metrics = threshold_metrics(
+                    predictions.detach().cpu().numpy(), binary_test_labels
+                )
 
                 result = {
                     "model": model_name,

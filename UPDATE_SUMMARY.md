@@ -25,7 +25,7 @@ export DATA_DIR=/path/to/datasets
 ---
 
 ### 2. ✅ Training Script Update: `scripts/train.py`
-- **Added new parameter**: `--dataset` 
+- **Added new parameter**: `--dataset`
   - Allows selection between: `MVtec`, `Robotics_Hazards`, `Distrimuse_UniGra`
   - Default: `Distrimuse_UniGra`
 

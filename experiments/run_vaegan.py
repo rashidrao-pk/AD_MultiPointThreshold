@@ -72,11 +72,7 @@ def parse_category_list(value):
     if isinstance(value, (list, tuple)):
         return list(value)
 
-    categories = [
-        item.strip()
-        for item in str(value).split(",")
-        if item.strip()
-    ]
+    categories = [item.strip() for item in str(value).split(",") if item.strip()]
     return categories or None
 
 

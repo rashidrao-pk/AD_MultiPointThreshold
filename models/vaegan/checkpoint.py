@@ -99,13 +99,19 @@ def save_checkpoint(
         "epochs_trained": len(loss_records),
         "encoder_state_dict": encoder.state_dict(),
         "decoder_state_dict": decoder.state_dict(),
-        "discriminator_state_dict": discriminator.state_dict() if discriminator is not None else None,
+        "discriminator_state_dict": discriminator.state_dict()
+        if discriminator is not None
+        else None,
         "optimizer_enc_state_dict": (
             optimizer_enc_dec.state_dict() if optimizer_enc_dec is not None else None
         ),
-        "optimizer_dis_state_dict": optimizer_dis.state_dict() if optimizer_dis is not None else None,
+        "optimizer_dis_state_dict": optimizer_dis.state_dict()
+        if optimizer_dis is not None
+        else None,
         # Backward-compatible key used by the older notebook-derived training script.
-        "optimizer_dec_state_dict": optimizer_dis.state_dict() if optimizer_dis is not None else None,
+        "optimizer_dec_state_dict": optimizer_dis.state_dict()
+        if optimizer_dis is not None
+        else None,
         "loss_history": loss_records,
         "config": config_dict,
         "dataset_summary": dataset_summary,

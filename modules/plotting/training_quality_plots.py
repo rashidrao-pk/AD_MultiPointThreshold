@@ -155,7 +155,7 @@ def _collect_loader_outputs(encoder, decoder, discriminator, loader, device, max
             l2_scores = torch.sqrt(torch.mean((images - recon) ** 2, dim=(1, 2, 3)))
             mse_scores = torch.mean((images - recon) ** 2, dim=(1, 2, 3))
             max_scores = torch.amax(torch.mean(abs_diff, dim=1), dim=(1, 2))
-            latent_radius = torch.sum(mu ** 2, dim=1)
+            latent_radius = torch.sum(mu**2, dim=1)
             if discriminator is None:
                 dis_scores = torch.full_like(l1_scores, float("nan"))
             else:
@@ -217,9 +217,7 @@ def _validation_grid_indices(dataset, class_names):
     if targets is None:
         samples = getattr(dataset, "samples", None) or []
         targets = [
-            sample[1]
-            for sample in samples
-            if isinstance(sample, (list, tuple)) and len(sample) > 1
+            sample[1] for sample in samples if isinstance(sample, (list, tuple)) and len(sample) > 1
         ]
 
     selected = {"normal": None, "anomalous": None}
@@ -241,11 +239,7 @@ def _collect_validation_grid_records(encoder, decoder, discriminator, loader, de
 
     class_names = _class_names_from_loader(loader)
     selected = _validation_grid_indices(dataset, class_names)
-    indices = [
-        index
-        for index in (selected["normal"], selected["anomalous"])
-        if index is not None
-    ]
+    indices = [index for index in (selected["normal"], selected["anomalous"]) if index is not None]
     if not indices:
         return []
 
@@ -267,7 +261,7 @@ def _collect_validation_grid_records(encoder, decoder, discriminator, loader, de
             l2_score = torch.sqrt(torch.mean((batch - recon) ** 2, dim=(1, 2, 3)))[0]
             mse_score = torch.mean((batch - recon) ** 2, dim=(1, 2, 3))[0]
             max_score = torch.amax(torch.mean(abs_diff, dim=1), dim=(1, 2))[0]
-            latent_radius = torch.sum(mu ** 2, dim=1)[0]
+            latent_radius = torch.sum(mu**2, dim=1)[0]
             if discriminator is None:
                 dis_score = torch.tensor(float("nan"))
             else:
@@ -375,10 +369,26 @@ def save_quality_metrics_history(metrics_history, output_path):
 
     fig, axes = plt.subplots(2, 2, figsize=(13.5, 8.2), constrained_layout=True)
     panels = (
-        (axes[0, 0], [("normal_mean_score", "Normal mean"), ("anomaly_mean_score", "Anomalous mean"), ("score_gap", "Gap")], "Score separation"),
+        (
+            axes[0, 0],
+            [
+                ("normal_mean_score", "Normal mean"),
+                ("anomaly_mean_score", "Anomalous mean"),
+                ("score_gap", "Gap"),
+            ],
+            "Score separation",
+        ),
         (axes[0, 1], [("auroc", "AUROC"), ("auprc", "AUPRC")], "Ranking metrics"),
-        (axes[1, 0], [("tpr_at_1_fpr", "TPR @ 1% FPR"), ("tpr_at_5_fpr", "TPR @ 5% FPR")], "Recall at fixed false-positive rate"),
-        (axes[1, 1], [("threshold_p95", "Normal P95"), ("threshold_p99", "Normal P99")], "Threshold stability"),
+        (
+            axes[1, 0],
+            [("tpr_at_1_fpr", "TPR @ 1% FPR"), ("tpr_at_5_fpr", "TPR @ 5% FPR")],
+            "Recall at fixed false-positive rate",
+        ),
+        (
+            axes[1, 1],
+            [("threshold_p95", "Normal P95"), ("threshold_p99", "Normal P99")],
+            "Threshold stability",
+        ),
     )
     for ax, columns, title in panels:
         for column, label in columns:
@@ -445,7 +455,9 @@ def save_score_components(snapshot, output_path):
     if "discriminator_score" in val and np.isfinite(val["discriminator_score"]).any():
         components.append(("discriminator_score", "Discriminator"))
 
-    fig, axes = plt.subplots(1, len(components), figsize=(3.0 * len(components), 4.8), constrained_layout=True)
+    fig, axes = plt.subplots(
+        1, len(components), figsize=(3.0 * len(components), 4.8), constrained_layout=True
+    )
     axes = np.atleast_1d(axes)
     for ax, (key, title) in zip(axes, components):
         normal = val[key][~is_anomaly]
@@ -529,7 +541,9 @@ def save_validation_quality_grid(snapshot, output_path):
     if not selected:
         return None
 
-    fig, axes = plt.subplots(len(selected), 3, figsize=(8.8, 3.0 * len(selected)), constrained_layout=True)
+    fig, axes = plt.subplots(
+        len(selected), 3, figsize=(8.8, 3.0 * len(selected)), constrained_layout=True
+    )
     if len(selected) == 1:
         axes = np.asarray([axes])
 
@@ -538,7 +552,9 @@ def save_validation_quality_grid(snapshot, output_path):
         recon = record["reconstruction"]
         label_name = class_names.get(int(record["label"]), str(record["label"]))
         sample_path = str(record.get("path", ""))
-        path_hint = f"\n{Path(sample_path).parent.name}/{Path(sample_path).name}" if sample_path else ""
+        path_hint = (
+            f"\n{Path(sample_path).parent.name}/{Path(sample_path).name}" if sample_path else ""
+        )
         score = record["score_l1"]
         panels = (
             ("Input", _to_image(image), None),

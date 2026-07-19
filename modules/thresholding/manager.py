@@ -8,12 +8,8 @@ def fit_threshold(scores, config):
     method = config.threshold.method
 
     if method == "single_point":
+        return fit_single_point(scores, config.threshold.percentile)
 
-        return fit_single_point(
-            scores,
-            config.threshold.percentile
-        )
-    
     if method == "multi_point":
         return fit_multi_point(
             scores=scores,
@@ -21,6 +17,5 @@ def fit_threshold(scores, config):
             percentile=config.threshold.percentile,
             decision_rule=config.threshold.decision_rule,
         )
-    
 
     raise ValueError(f"Unknown thresholding method {method}")

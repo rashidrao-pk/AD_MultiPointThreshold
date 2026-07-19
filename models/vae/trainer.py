@@ -101,7 +101,11 @@ def train_model(
     model_name = str(_cfg_get(model_cfg, "name", "vanilla_vae"))
 
     epochs = int(_cfg_get(training_cfg, "epochs", 20))
-    lr = float(_cfg_get(training_cfg, "learning_rate_enc_dec", _cfg_get(training_cfg, "learning_rate", 1e-3)))
+    lr = float(
+        _cfg_get(
+            training_cfg, "learning_rate_enc_dec", _cfg_get(training_cfg, "learning_rate", 1e-3)
+        )
+    )
     beta_kl = float(_cfg_get(training_cfg, "beta_kl", 1e-4))
     save_every = int(_cfg_get(training_cfg, "save_every", 1))
     latent_dim = int(_cfg_get(model_cfg, "latent_dim", 64))

@@ -12,7 +12,6 @@ from .general import (
 )
 
 
-
 __all__ = [
     "apply_config_overrides",
     "deep_merge",
@@ -23,5 +22,5 @@ __all__ = [
     "resolve_device",
     "save_config_yaml",
     "validate_existing_paths",
-    "set_device"
+    "set_device",
 ]

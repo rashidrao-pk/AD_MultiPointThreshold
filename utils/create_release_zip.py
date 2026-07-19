@@ -9,8 +9,7 @@ REPO_ROOT = Path.cwd()
 OUTPUT = REPO_ROOT.parent / "MultiPoint_AD.zip"
 
 files = subprocess.check_output(
-    ["git", "ls-files", "-co", "--exclude-standard"],
-    text=True
+    ["git", "ls-files", "-co", "--exclude-standard"], text=True
 ).splitlines()
 
 with zipfile.ZipFile(OUTPUT, "w", zipfile.ZIP_DEFLATED) as z:

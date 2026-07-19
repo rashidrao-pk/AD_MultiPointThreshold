@@ -15,4 +15,4 @@
 4. [x] Live-web plots monitoring
    -  `python app.py` and then visit [http://127.0.0.1:8000/training](http://127.0.0.1:8000/training)
 5. [x] Override `config parameters` with `CLI` args
-   -  
+   -

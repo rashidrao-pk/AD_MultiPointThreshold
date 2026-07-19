@@ -1,7 +1,6 @@
 from pathlib import Path
 from PIL import Image
 
-import torch
 from torch.utils.data import Dataset, DataLoader
 
 from .transforms import build_transforms
@@ -36,10 +35,7 @@ def list_images(root):
     if not root.exists():
         return []
 
-    return sorted([
-        p for p in root.rglob("*")
-        if p.suffix.lower() in IMG_EXTS
-    ])
+    return sorted([p for p in root.rglob("*") if p.suffix.lower() in IMG_EXTS])
 
 
 class CobotsDataset(Dataset):
@@ -76,20 +72,13 @@ def get_dataloaders_cobots(cfg):
     area = canonicalize_area(cfg.category)
 
     if area not in VALID_COBOTS_AREAS:
-        raise ValueError(
-            f"Invalid Cobots area: {area}. "
-            f"Valid areas: {VALID_COBOTS_AREAS}"
-        )
+        raise ValueError(f"Invalid Cobots area: {area}. Valid areas: {VALID_COBOTS_AREAS}")
 
     train_normal_root = dataset_root / "train" / area / "normal"
 
-    test_normal_root = (
-        dataset_root / "test" / "unexpected_person" / area / "normal"
-    )
+    test_normal_root = dataset_root / "test" / "unexpected_person" / area / "normal"
 
-    test_anomaly_root = (
-        dataset_root / "test" / "unexpected_person" / area / "unexpected_person"
-    )
+    test_anomaly_root = dataset_root / "test" / "unexpected_person" / area / "unexpected_person"
 
     if not train_normal_root.exists():
         raise FileNotFoundError(f"Missing train normal path: {train_normal_root}")
@@ -103,10 +92,7 @@ def get_dataloaders_cobots(cfg):
 
     train_samples = [(p, 0) for p in train_normal]
 
-    test_samples = (
-        [(p, 0) for p in test_normal] +
-        [(p, 1) for p in test_anomaly]
-    )
+    test_samples = [(p, 0) for p in test_normal] + [(p, 1) for p in test_anomaly]
 
     if len(train_samples) == 0:
         raise RuntimeError(f"No training images found in: {train_normal_root}")

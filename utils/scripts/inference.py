@@ -1,21 +1,17 @@
 import os
 import json
-import time
 import argparse
-from collections import deque, OrderedDict
 
 import cv2
 import numpy as np
 from matplotlib.colors import LinearSegmentedColormap
 
 import torch
-import torchvision.transforms as transforms
 
 # import rclpy
 # from rclpy.node import Node
 # from rclpy.qos import QoSProfile, ReliabilityPolicy, HistoryPolicy
 # from sensor_msgs.msg import Image as CompressedImage
-from cv_bridge import CvBridge
 
 # from distrimuse_ros2_api.msg import RulexAreaScore, RulexDetectionResult
 
@@ -101,7 +97,7 @@ def resize_and_center(image, target_w, target_h, bg_color=(0, 0, 0)):
 
     x_off = (target_w - new_w) // 2
     y_off = (target_h - new_h) // 2
-    canvas[y_off:y_off + new_h, x_off:x_off + new_w] = resized
+    canvas[y_off : y_off + new_h, x_off : x_off + new_w] = resized
     return canvas
 
 
@@ -185,28 +181,36 @@ def paste_area_result_in_full_frame(
         return target_canvas
 
     patch_resized = cv2.resize(patch_bgr, (crop_w, crop_h), interpolation=cv2.INTER_AREA)
-    mask_crop = mask_bin[y1:y2 + 1, x1:x2 + 1]
+    mask_crop = mask_bin[y1 : y2 + 1, x1 : x2 + 1]
     mask_crop_3 = cv2.cvtColor(mask_crop, cv2.COLOR_GRAY2BGR)
 
-    roi = target_canvas[y1:y2 + 1, x1:x2 + 1]
+    roi = target_canvas[y1 : y2 + 1, x1 : x2 + 1]
 
     if keep_background and background_canvas is not None:
-        bg_roi = background_canvas[y1:y2 + 1, x1:x2 + 1]
+        bg_roi = background_canvas[y1 : y2 + 1, x1 : x2 + 1]
         blended = np.where(mask_crop_3 > 0, patch_resized, bg_roi)
     else:
         blended = np.where(mask_crop_3 > 0, patch_resized, roi)
 
-    target_canvas[y1:y2 + 1, x1:x2 + 1] = blended
+    target_canvas[y1 : y2 + 1, x1 : x2 + 1] = blended
     return target_canvas
 
 
 def draw_text_table(panel, results, frame_id=None, corr_frame_id=None, corr_stamp=None):
     """Draw the safety-area score table into a dashboard panel."""
     panel[:] = (245, 245, 245)
-    
+
     title_y = 35
-    cv2.putText(panel, "Details", (panel.shape[1] // 2 - 50, title_y),
-                cv2.FONT_HERSHEY_SIMPLEX, 0.9, (20, 20, 20), 2, cv2.LINE_AA)
+    cv2.putText(
+        panel,
+        "Details",
+        (panel.shape[1] // 2 - 50, title_y),
+        cv2.FONT_HERSHEY_SIMPLEX,
+        0.9,
+        (20, 20, 20),
+        2,
+        cv2.LINE_AA,
+    )
 
     y = 70
     cv2.line(panel, (20, y), (panel.shape[1] - 20, y), (40, 40, 40), 2)
@@ -217,8 +221,9 @@ def draw_text_table(panel, results, frame_id=None, corr_frame_id=None, corr_stam
             txt = f"Frame: {frame_id} CFID: {corr_frame_id} @ {corr_stamp.sec}.{corr_stamp.nanosec}"
         else:
             txt = f"Frame: {frame_id}"
-        cv2.putText(panel, txt, (30, y),
-                    cv2.FONT_HERSHEY_SIMPLEX, 0.8, (20, 20, 20), 2, cv2.LINE_AA)
+        cv2.putText(
+            panel, txt, (30, y), cv2.FONT_HERSHEY_SIMPLEX, 0.8, (20, 20, 20), 2, cv2.LINE_AA
+        )
         y += 20
         cv2.line(panel, (20, y), (panel.shape[1] - 20, y), (40, 40, 40), 1)
         y += 35
@@ -227,8 +232,9 @@ def draw_text_table(panel, results, frame_id=None, corr_frame_id=None, corr_stam
     col_x = [30, 240, 370, 510, 670]
 
     for i, hdr in enumerate(headers):
-        cv2.putText(panel, hdr, (col_x[i], y),
-                    cv2.FONT_HERSHEY_SIMPLEX, 0.7, (30, 30, 30), 2, cv2.LINE_AA)
+        cv2.putText(
+            panel, hdr, (col_x[i], y), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (30, 30, 30), 2, cv2.LINE_AA
+        )
 
     y += 20
     cv2.line(panel, (20, y), (panel.shape[1] - 20, y), (40, 40, 40), 1)
@@ -252,11 +258,16 @@ def draw_text_table(panel, results, frame_id=None, corr_frame_id=None, corr_stam
         ]
 
         for i, val in enumerate(vals):
-            cv2.putText(panel, str(val), (col_x[i], y),
-                        cv2.FONT_HERSHEY_SIMPLEX, 0.7,
-                        color if i >= 3 else (30, 30, 30),
-                        2 if i == 4 else 1,
-                        cv2.LINE_AA)
+            cv2.putText(
+                panel,
+                str(val),
+                (col_x[i], y),
+                cv2.FONT_HERSHEY_SIMPLEX,
+                0.7,
+                color if i >= 3 else (30, 30, 30),
+                2 if i == 4 else 1,
+                cv2.LINE_AA,
+            )
 
         y += 20
         cv2.line(panel, (20, y), (panel.shape[1] - 20, y), (120, 120, 120), 1)
@@ -288,8 +299,16 @@ def build_full_recon_and_anom(frame_bgr, area_inputs):
     return recon_full, anom_full
 
 
-def draw_dashboard_panel(frame_bgr, area_inputs, latest_results, frame_id=None,
-                         width=1600, height=1000, corr_frame_id=None, corr_stamp=None):
+def draw_dashboard_panel(
+    frame_bgr,
+    area_inputs,
+    latest_results,
+    frame_id=None,
+    width=1600,
+    height=1000,
+    corr_frame_id=None,
+    corr_stamp=None,
+):
     """Render the four-panel live inference dashboard."""
     canvas = np.full((height, width, 3), 235, dtype=np.uint8)
 
@@ -305,8 +324,16 @@ def draw_dashboard_panel(frame_bgr, area_inputs, latest_results, frame_id=None,
     def draw_panel_title(title, box):
         """Draw a titled border for one dashboard panel."""
         x1, y1, x2, y2 = box
-        cv2.putText(canvas, title, (x1 + 12, y1 + 28),
-                    cv2.FONT_HERSHEY_SIMPLEX, 0.9, (20, 20, 20), 2, cv2.LINE_AA)
+        cv2.putText(
+            canvas,
+            title,
+            (x1 + 12, y1 + 28),
+            cv2.FONT_HERSHEY_SIMPLEX,
+            0.9,
+            (20, 20, 20),
+            2,
+            cv2.LINE_AA,
+        )
         cv2.rectangle(canvas, (x1, y1), (x2, y2), (20, 20, 20), 1)
 
     draw_panel_title("Input Image with detections", tl)
@@ -352,7 +379,7 @@ def draw_dashboard_panel(frame_bgr, area_inputs, latest_results, frame_id=None,
     tl_img = cv2.resize(input_full, (new_w, new_h), interpolation=cv2.INTER_AREA)
     x_off = tl_in[0] + (tl_w - new_w) // 2
     y_off = tl_in[1] + (tl_h - new_h) // 2
-    canvas[y_off:y_off + new_h, x_off:x_off + new_w] = tl_img
+    canvas[y_off : y_off + new_h, x_off : x_off + new_w] = tl_img
 
     for area_name in ordered_area_list(area_inputs.keys()):
         info = area_inputs[area_name]
@@ -362,16 +389,28 @@ def draw_dashboard_panel(frame_bgr, area_inputs, latest_results, frame_id=None,
         if len(scaled) > 0:
             cv2.drawContours(canvas, scaled, -1, color, 2)
             pt = scaled[0][0][0]
-            label = f"{AREA_DISPLAY_NAMES.get(area_name, area_name)}: {rr.get('norm_score', 0):.2f}" if "norm_score" in rr else area_name
-            cv2.putText(canvas, label, (int(pt[0]), max(20, int(pt[1]) - 8)),
-                        cv2.FONT_HERSHEY_SIMPLEX, 0.6, color, 2, cv2.LINE_AA)
+            label = (
+                f"{AREA_DISPLAY_NAMES.get(area_name, area_name)}: {rr.get('norm_score', 0):.2f}"
+                if "norm_score" in rr
+                else area_name
+            )
+            cv2.putText(
+                canvas,
+                label,
+                (int(pt[0]), max(20, int(pt[1]) - 8)),
+                cv2.FONT_HERSHEY_SIMPLEX,
+                0.6,
+                color,
+                2,
+                cv2.LINE_AA,
+            )
 
     recon_full, anom_full = build_full_recon_and_anom(frame_bgr, area_inputs)
 
     tr_w = tr_in[2] - tr_in[0]
     tr_h = tr_in[3] - tr_in[1]
     anom_disp = resize_and_center(anom_full, tr_w, tr_h, bg_color=(255, 255, 255))
-    canvas[tr_in[1]:tr_in[1] + tr_h, tr_in[0]:tr_in[0] + tr_w] = anom_disp
+    canvas[tr_in[1] : tr_in[1] + tr_h, tr_in[0] : tr_in[0] + tr_w] = anom_disp
 
     scale_tr = min(tr_w / w, tr_h / h)
     new_w_tr = max(1, int(w * scale_tr))
@@ -387,14 +426,26 @@ def draw_dashboard_panel(frame_bgr, area_inputs, latest_results, frame_id=None,
         if len(scaled) > 0:
             cv2.drawContours(canvas, scaled, -1, color, 2)
             pt = scaled[0][0][0]
-            label = f"{rr.get('status', '')}: {rr.get('norm_score', 0):.2f}" if "norm_score" in rr else area_name
-            cv2.putText(canvas, label, (int(pt[0]), int(pt[1]) + 22),
-                        cv2.FONT_HERSHEY_SIMPLEX, 0.6, color, 2, cv2.LINE_AA)
+            label = (
+                f"{rr.get('status', '')}: {rr.get('norm_score', 0):.2f}"
+                if "norm_score" in rr
+                else area_name
+            )
+            cv2.putText(
+                canvas,
+                label,
+                (int(pt[0]), int(pt[1]) + 22),
+                cv2.FONT_HERSHEY_SIMPLEX,
+                0.6,
+                color,
+                2,
+                cv2.LINE_AA,
+            )
 
     bl_w = bl_in[2] - bl_in[0]
     bl_h = bl_in[3] - bl_in[1]
     recon_disp = resize_and_center(recon_full, bl_w, bl_h, bg_color=(0, 0, 0))
-    canvas[bl_in[1]:bl_in[1] + bl_h, bl_in[0]:bl_in[0] + bl_w] = recon_disp
+    canvas[bl_in[1] : bl_in[1] + bl_h, bl_in[0] : bl_in[0] + bl_w] = recon_disp
 
     scale_bl = min(bl_w / w, bl_h / h)
     new_w_bl = max(1, int(w * scale_bl))
@@ -411,9 +462,14 @@ def draw_dashboard_panel(frame_bgr, area_inputs, latest_results, frame_id=None,
             cv2.drawContours(canvas, scaled, -1, color, 2)
 
     details_panel = np.full((br_in[3] - br_in[1], br_in[2] - br_in[0], 3), 245, dtype=np.uint8)
-    details_panel = draw_text_table(details_panel, latest_results, frame_id=frame_id,
-                                    corr_frame_id=corr_frame_id, corr_stamp=corr_stamp)
-    canvas[br_in[1]:br_in[3], br_in[0]:br_in[2]] = details_panel
+    details_panel = draw_text_table(
+        details_panel,
+        latest_results,
+        frame_id=frame_id,
+        corr_frame_id=corr_frame_id,
+        corr_stamp=corr_stamp,
+    )
+    canvas[br_in[1] : br_in[3], br_in[0] : br_in[2]] = details_panel
 
     return canvas, recon_full, anom_full
 
@@ -456,7 +512,7 @@ def _crop_with_mask(frame, mask_gray):
     x_min, x_max = xs.min(), xs.max()
     y_min, y_max = ys.min(), ys.max()
 
-    cropped = masked_full[y_min:y_max + 1, x_min:x_max + 1]
+    cropped = masked_full[y_min : y_max + 1, x_min : x_max + 1]
     bbox = (x_min, y_min, x_max, y_max)
     return cropped, bbox, masked_full
 
@@ -471,9 +527,14 @@ def _resize_128(image, keep_aspect=True, target=(128, 128), return_meta=False):
     if not keep_aspect:
         out = cv2.resize(image, (target_w, target_h), interpolation=cv2.INTER_AREA)
         meta = {
-            "new_w": target_w, "new_h": target_h, "x_off": 0, "y_off": 0,
-            "target_w": target_w, "target_h": target_h,
-            "orig_h": image.shape[0], "orig_w": image.shape[1],
+            "new_w": target_w,
+            "new_h": target_h,
+            "x_off": 0,
+            "y_off": 0,
+            "target_w": target_w,
+            "target_h": target_h,
+            "orig_h": image.shape[0],
+            "orig_w": image.shape[1],
         }
         return (out, meta) if return_meta else out
 
@@ -489,18 +550,24 @@ def _resize_128(image, keep_aspect=True, target=(128, 128), return_meta=False):
     canvas = np.zeros((target_h, target_w, 3), dtype=np.uint8)
     x_off = (target_w - new_w) // 2
     y_off = (target_h - new_h) // 2
-    canvas[y_off:y_off + new_h, x_off:x_off + new_w] = resized
+    canvas[y_off : y_off + new_h, x_off : x_off + new_w] = resized
 
     meta = {
-        "new_w": new_w, "new_h": new_h, "x_off": x_off, "y_off": y_off,
-        "target_w": target_w, "target_h": target_h, "orig_h": h, "orig_w": w,
+        "new_w": new_w,
+        "new_h": new_h,
+        "x_off": x_off,
+        "y_off": y_off,
+        "target_w": target_w,
+        "target_h": target_h,
+        "orig_h": h,
+        "orig_w": w,
     }
     return (canvas, meta) if return_meta else canvas
 
 
 def tensor_to_hwc_float32(t: torch.Tensor) -> np.ndarray:
     """Convert a normalized CHW tensor to an HWC float32 image."""
-    return (t.detach().cpu().numpy().transpose(1, 2, 0).astype(np.float32) * 0.5 + 0.5)
+    return t.detach().cpu().numpy().transpose(1, 2, 0).astype(np.float32) * 0.5 + 0.5
 
 
 def _compute_distance_offset_np(imgA: np.ndarray, imgB: np.ndarray, offset: int) -> np.ndarray:
@@ -520,7 +587,7 @@ def _compute_distance_offset_np(imgA: np.ndarray, imgB: np.ndarray, offset: int)
             j1b = min(W, W - dj)
 
             diff = imgA[i0a:i1a, j0a:j1a] - imgB[i0b:i1b, j0b:j1b]
-            d = np.sqrt((diff ** 2).sum(axis=2)).astype(np.float32)
+            d = np.sqrt((diff**2).sum(axis=2)).astype(np.float32)
             dist[i0a:i1a, j0a:j1a] = np.minimum(dist[i0a:i1a, j0a:j1a], d)
     return dist
 
@@ -543,8 +610,10 @@ def load_threshold(threshold_dir: str, safety_area: str) -> float:
 
 def build_suffix_for_area(area, args):
     """Build the model checkpoint suffix used for a safety area."""
+
     class P:
         """Minimal namespace used by legacy path-building helpers."""
+
         pass
 
     params = P()
@@ -573,7 +642,10 @@ def build_suffix_for_area(area, args):
     paths.path_models = os.path.join(cwd, args.checkpoints)
 
     suffix, _ = ut.get_create_results_path(
-        area, params, args, paths,
+        area,
+        params,
+        args,
+        paths,
         save_path_type=args.save_path_type,
         dir="scripts/results",
         verbose=False,
@@ -601,8 +673,15 @@ def load_models_for_areas(args, device, checkpoint_root=None, log_fn=None):
             log_fn(2, f"[model-load] checkpoint_root={checkpoint_root}")
 
         history, config = utmc.load_model(
-            enc, dec, dis, optED, optD,
-            checkpoint_root, suffix, device=device, verbose=False,
+            enc,
+            dec,
+            dis,
+            optED,
+            optD,
+            checkpoint_root,
+            suffix,
+            device=device,
+            verbose=False,
             model_variant=args.model_variant,
         )
 
@@ -626,7 +705,6 @@ def load_models_for_areas(args, device, checkpoint_root=None, log_fn=None):
 load_models = load_models_for_areas
 
 
-
 def parse_args():
     """Parse command-line arguments for live anomaly inference."""
     p = argparse.ArgumentParser("Live ROS anomaly inference v5")
@@ -645,9 +723,12 @@ def parse_args():
     p.add_argument("--publish_timeline", action="store_true")
     p.add_argument("--timeline_topic", default="/rulex/timeline")
 
-    p.add_argument("--dataset", default="Distrimuse_UniGra",
-                   choices=["MVtec", "Robotics_Hazards", "Distrimuse_UniGra"],
-                   help="Dataset to use for inference")
+    p.add_argument(
+        "--dataset",
+        default="Distrimuse_UniGra",
+        choices=["MVtec", "Robotics_Hazards", "Distrimuse_UniGra"],
+        help="Dataset to use for inference",
+    )
     p.add_argument("--safety_area", default="ALL")
     p.add_argument("--area_names", nargs="+", default=["PLeft", "PRight", "RoboArm", "ConvBelt"])
     p.add_argument("--static_mask_paths", nargs="+", required=True)
@@ -684,23 +765,12 @@ def parse_args():
 
 
 def main():
-    """Initialize and run the live anomaly inference node."""
-    args = parse_args()
-    # rclpy.init()
-    node = LiveRosAnomalyInfer(args)
-    try:
-        pass
-        # rclpy.spin(node)
-    except KeyboardInterrupt:
-        node.get_logger().info("Stopped by user.")
-    finally:
-        try:
-            cv2.destroyAllWindows()
-        except Exception:
-            pass
-        # if rclpy.ok():
-            # node.destroy_node()
-            # rclpy.shutdown()
+    parse_args()  # Validate CLI arguments
+    raise RuntimeError(
+        "Live ROS inference is not enabled in this script. "
+        "The LiveRosAnomalyInfer class and ROS2 imports are currently unavailable. "
+        "Use the supported offline inference pipeline or restore the ROS2 implementation."
+    )
 
 
 if __name__ == "__main__":

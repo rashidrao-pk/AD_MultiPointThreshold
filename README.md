@@ -15,7 +15,7 @@
 <a href="https://github.com/rashidrao-pk/AD_MultiPointThreshold/commits/main"><img src="https://img.shields.io/github/last-commit/rashidrao-pk/AD_MultiPointThreshold" alt="GitHub last commit"></a>
 
 
-Note: 
+Note:
 BASE REPO
 > https://github.com/rashidrao-pk/advis_distrimuse_unito
 
@@ -49,7 +49,7 @@ Install the Kaggle and Hugging Face CLIs:
 
 ```bash
 pip install -U kaggle huggingface_hub
-# or using conda 
+# or using conda
 # conda install -c conda-forge huggingface_hub
 ```
 #### verify
@@ -135,7 +135,7 @@ huggingface-cli download rashidrao/AD_MVTec \
   --local-dir checkpoints/AD_MVTec
 ```
 
-or 
+or
 
 
 ```bash
@@ -491,7 +491,7 @@ python utils/scripts/inference.py \
   --checkpoints models/ \
   --threshold_dir results/thresholds/
 
-# MVtec dataset  
+# MVtec dataset
 python utils/scripts/inference.py \
   --dataset MVtec \
   --object hazelnut \

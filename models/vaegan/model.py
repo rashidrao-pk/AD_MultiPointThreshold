@@ -1,4 +1,3 @@
-import torch
 import torch.nn as nn
 
 
@@ -10,15 +9,15 @@ class Encoder(nn.Module):
         """Initialize convolutional layers and latent projection heads."""
         super(Encoder, self).__init__()
         self.conv_layers = nn.Sequential(
-            nn.Conv2d(3, 64, kernel_size=4, stride=2, padding=1),   # 128x128 -> 64x64
+            nn.Conv2d(3, 64, kernel_size=4, stride=2, padding=1),  # 128x128 -> 64x64
             nn.ReLU(),
             nn.Conv2d(64, 128, kernel_size=4, stride=2, padding=1),  # 64x64 -> 32x32
             nn.ReLU(),
-            nn.Conv2d(128, 256, kernel_size=4, stride=2, padding=1), # 32x32 -> 16x16
+            nn.Conv2d(128, 256, kernel_size=4, stride=2, padding=1),  # 32x32 -> 16x16
             nn.ReLU(),
-            nn.Conv2d(256, 512, kernel_size=4, stride=2, padding=1), # 16x16 -> 8x8
+            nn.Conv2d(256, 512, kernel_size=4, stride=2, padding=1),  # 16x16 -> 8x8
             nn.ReLU(),
-            nn.Flatten()
+            nn.Flatten(),
         )
         self.fc_mu = nn.Linear(512 * 8 * 8, z_size)
         self.fc_logvar = nn.Linear(512 * 8 * 8, z_size)
@@ -29,6 +28,7 @@ class Encoder(nn.Module):
         mu = self.fc_mu(h)
         logvar = self.fc_logvar(h)
         return mu, logvar
+
 
 # Decoder
 class Decoder(nn.Module):
@@ -43,12 +43,12 @@ class Decoder(nn.Module):
             nn.Unflatten(1, (512, 8, 8)),
             nn.ConvTranspose2d(512, 256, kernel_size=4, stride=2, padding=1),  # 8x8 -> 16x16
             nn.ReLU(),
-            nn.ConvTranspose2d(256, 128, kernel_size=4, stride=2, padding=1),   # 16x16 -> 32x32
+            nn.ConvTranspose2d(256, 128, kernel_size=4, stride=2, padding=1),  # 16x16 -> 32x32
             nn.ReLU(),
-            nn.ConvTranspose2d(128, 64, kernel_size=4, stride=2, padding=1),    # 32x32 -> 64x64
+            nn.ConvTranspose2d(128, 64, kernel_size=4, stride=2, padding=1),  # 32x32 -> 64x64
             nn.ReLU(),
-            nn.ConvTranspose2d(64, 3, kernel_size=4, stride=2, padding=1),      # 64x64 -> 128x128
-            nn.Tanh()  # Output scaled between -1 and 1
+            nn.ConvTranspose2d(64, 3, kernel_size=4, stride=2, padding=1),  # 64x64 -> 128x128
+            nn.Tanh(),  # Output scaled between -1 and 1
         )
 
     def forward(self, z):
@@ -56,6 +56,7 @@ class Decoder(nn.Module):
         h = self.fc(z)
         h = self.deconv_layers(h)
         return h
+
 
 # Define the model for blur/fake detection
 class Discriminator(nn.Module):
@@ -68,11 +69,9 @@ class Discriminator(nn.Module):
             nn.Conv2d(3, 32, kernel_size=3, stride=1, padding=1),
             nn.ReLU(),
             nn.MaxPool2d(2, 2),
-            
             nn.Conv2d(32, 64, kernel_size=3, stride=1, padding=1),
             nn.ReLU(),
             nn.MaxPool2d(2, 2),
-            
             nn.Conv2d(64, 128, kernel_size=3, stride=1, padding=1),
             nn.ReLU(),
             nn.MaxPool2d(2, 2),
@@ -85,7 +84,7 @@ class Discriminator(nn.Module):
             nn.Linear(256, 1),
             # nn.Sigmoid()
         )
-    
+
     def forward(self, x):
         """Return discriminator logits for an image batch."""
         x = self.conv_layers(x)

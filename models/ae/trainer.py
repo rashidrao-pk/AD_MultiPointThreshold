@@ -88,7 +88,11 @@ def train_model(
     model_name = str(_cfg_get(model_cfg, "name", "basic_ae"))
 
     epochs = int(_cfg_get(training_cfg, "epochs", 20))
-    lr = float(_cfg_get(training_cfg, "learning_rate_enc_dec", _cfg_get(training_cfg, "learning_rate", 1e-3)))
+    lr = float(
+        _cfg_get(
+            training_cfg, "learning_rate_enc_dec", _cfg_get(training_cfg, "learning_rate", 1e-3)
+        )
+    )
     save_every = int(_cfg_get(training_cfg, "save_every", 1))
     latent_dim = int(_cfg_get(model_cfg, "latent_dim", 64))
     loss_fn = _reconstruction_loss(_cfg_get(model_cfg, "recon_loss", "MSE"))

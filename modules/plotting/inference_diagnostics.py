@@ -97,7 +97,9 @@ def save_inference_score_distribution(df, output_path):
                 continue
             if mode == "hist":
                 ax.hist(scores, bins=bins, density=True, alpha=0.30, color=color, label=label)
-                ax.hist(scores, bins=bins, density=True, histtype="step", linewidth=1.3, color=color)
+                ax.hist(
+                    scores, bins=bins, density=True, histtype="step", linewidth=1.3, color=color
+                )
                 ax.axvline(float(np.median(scores)), color=color, linestyle="--", linewidth=1.2)
             else:
                 density = _kde_values(scores, x_values)
@@ -122,7 +124,9 @@ def save_inference_score_distribution(df, output_path):
     return output_path
 
 
-def save_inference_latent_space(encoder, loader, device, output_path, max_batches=8, projection="pca"):
+def save_inference_latent_space(
+    encoder, loader, device, output_path, max_batches=8, projection="pca"
+):
     """Save latent-space projection for an inference/test dataloader."""
     return save_latent_space(
         encoder=encoder,
@@ -187,7 +191,14 @@ def save_inference_validation_samples(
     if not selected:
         return None
 
-    rows = [(name, item) for name, item in (("normal", selected.get("normal")), ("anomalous", selected.get("anomalous"))) if item]
+    rows = [
+        (name, item)
+        for name, item in (
+            ("normal", selected.get("normal")),
+            ("anomalous", selected.get("anomalous")),
+        )
+        if item
+    ]
     fig, axes = plt.subplots(len(rows), 3, figsize=(8.8, 3.0 * len(rows)), constrained_layout=True)
     if len(rows) == 1:
         axes = np.asarray([axes])

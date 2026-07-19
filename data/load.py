@@ -35,10 +35,9 @@ def infer_dataset_from_structure(data_cfg):
     # root/train/PLeft/normal
     # root/test/unexpected_person/PLeft/unexpected_person
     if area in VALID_COBOTS_AREAS:
-        if (
-            (root / "train" / area / "normal").exists()
-            or (root / "test" / "unexpected_person" / area).exists()
-        ):
+        if (root / "train" / area / "normal").exists() or (
+            root / "test" / "unexpected_person" / area
+        ).exists():
             return "Cobots_Synthetic"
 
     # Hazards:

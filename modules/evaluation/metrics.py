@@ -15,7 +15,6 @@ def ranking_metrics(scores, y_true):
 
 def threshold_metrics(y_pred, y_true):
     """Compute binary classification metrics from threshold predictions."""
-    
 
     tp = ((y_pred == 1) & (y_true == 1)).sum()
     fp = ((y_pred == 1) & (y_true == 0)).sum()

@@ -6,14 +6,21 @@ from pathlib import Path
 from types import SimpleNamespace
 
 import yaml
+import torch
 
 
-# Set up device 
+# Set up device
 def set_device(config):
     """Resolve and store the torch device requested by the experiment config."""
-    
+
     if config.device == "auto":
-        device = torch.device("cuda" if torch.cuda.is_available() else "mps" if torch.backends.mps.is_available() else "cpu")
+        device = torch.device(
+            "cuda"
+            if torch.cuda.is_available()
+            else "mps"
+            if torch.backends.mps.is_available()
+            else "cpu"
+        )
         config.device = str(device)
     else:
         device = torch.device(config.device)
@@ -28,10 +35,7 @@ def deep_merge(base, override):
     """Recursively merge override values into a copied base dictionary."""
     result = copy.deepcopy(base)
     for key, value in (override or {}).items():
-        if (
-            isinstance(value, dict)
-            and isinstance(result.get(key), dict)
-        ):
+        if isinstance(value, dict) and isinstance(result.get(key), dict):
             result[key] = deep_merge(result[key], value)
         else:
             result[key] = copy.deepcopy(value)
@@ -41,6 +45,7 @@ def deep_merge(base, override):
 def expand_env_value(value):
     """Expand environment variables and user paths in nested config values."""
     if isinstance(value, str):
+
         def replace(match):
             """Replace one environment-variable match with its configured value."""
             name, default = match.group(1), match.group(2)
@@ -127,17 +132,15 @@ def validate_existing_paths(cfg_dict):
             f"{details}"
         )
 
-import torch
 
 def dict_to_namespace(d):
     """Convert nested dictionaries and lists into SimpleNamespace objects."""
     if isinstance(d, dict):
-        return SimpleNamespace(**{
-            k: dict_to_namespace(v) for k, v in d.items()
-        })
+        return SimpleNamespace(**{k: dict_to_namespace(v) for k, v in d.items()})
     if isinstance(d, list):
         return [dict_to_namespace(v) for v in d]
     return d
+
 
 def read_config(path, local_config_path=None, validate_paths=True):
     """Load, merge, expand, validate, and namespace an experiment config."""
@@ -239,12 +242,15 @@ def resolve_device(requested="auto"):
         return torch.device("cpu")
 
     if requested == "mps":
-        mps_ok = getattr(torch.backends, "mps", None) is not None and torch.backends.mps.is_available()
+        mps_ok = (
+            getattr(torch.backends, "mps", None) is not None and torch.backends.mps.is_available()
+        )
         if not mps_ok:
             print("[device] MPS requested but unavailable. Falling back to CPU.")
             return torch.device("cpu")
 
     return torch.device(requested)
+
 
 def make_run_dir(config, suffix=""):
     """Create and return a timestamped output directory for an experiment run."""
@@ -254,7 +260,7 @@ def make_run_dir(config, suffix=""):
     category = getattr(config.data, "category", "all")
     scoring_method = config.scoring.method
     threshold_method = config.threshold.method
-    
+
     run_name = f"{dataset_name}_{category}_{scoring_method}_{threshold_method}"
 
     if config.threshold.decision_rule is not None:

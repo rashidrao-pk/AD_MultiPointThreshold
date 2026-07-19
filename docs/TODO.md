@@ -3,7 +3,7 @@
 1. ADD different models in it
     - [ ] AE
     - [ ] VAE
-    - [x] VAE-GAN 
+    - [x] VAE-GAN
     - [ ] GAN
     - [ ] VitVAEGAN
 
@@ -31,7 +31,7 @@
 5. Add Policies for MultiPoint
     - [x] Any
     - [x] Majority
-    - [x] all 
+    - [x] all
 
 
 ## Modules
@@ -66,5 +66,5 @@
 ## PENDING TASKS
 
 1.  [ ] #LINE70/[modules\scoring\reconstruction.py](modules\scoring\reconstruction.py) - reconstruction_quantile_score()
-    -   TODO: we can also try squared error here, but for now we stick to absolute error as it is more interpretable and less sensitive to outliers. 
+    -   TODO: we can also try squared error here, but for now we stick to absolute error as it is more interpretable and less sensitive to outliers.
 2. [ ] add comments in config for training and infe

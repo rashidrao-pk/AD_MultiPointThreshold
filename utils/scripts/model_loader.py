@@ -39,7 +39,9 @@ def resolve_device(requested: str = "auto") -> torch.device:
         print("[device] CUDA requested but not available. Falling back to CPU.")
         return torch.device("cpu")
     if requested == "mps":
-        mps_ok = getattr(torch.backends, "mps", None) is not None and torch.backends.mps.is_available()
+        mps_ok = (
+            getattr(torch.backends, "mps", None) is not None and torch.backends.mps.is_available()
+        )
         if not mps_ok:
             print("[device] MPS requested but not available. Falling back to CPU.")
             return torch.device("cpu")
@@ -54,7 +56,9 @@ def torch_load_checkpoint(model_path: Path, device: torch.device) -> Dict[str, A
         return torch.load(model_path, map_location="cpu")
 
 
-def _first_existing_state_dict(checkpoint: Dict[str, Any], keys) -> Optional[Dict[str, torch.Tensor]]:
+def _first_existing_state_dict(
+    checkpoint: Dict[str, Any], keys
+) -> Optional[Dict[str, torch.Tensor]]:
     """Return the first checkpoint state dict found under one of the given keys."""
     for key in keys:
         if key in checkpoint and isinstance(checkpoint[key], dict):
@@ -81,15 +85,15 @@ def get_model_summary(model, model_name="Model"):
     """Return a printable architecture and parameter-count summary."""
     total_params, trainable_params = count_parameters(model)
     return f"""
-{'='*80}
+{"=" * 80}
 {model_name}
-{'='*80}
+{"=" * 80}
 Total Parameters:      {total_params:,}
 Trainable Parameters:  {trainable_params:,}
-{'='*80}
+{"=" * 80}
 Architecture:
 {model}
-{'='*80}
+{"=" * 80}
 """
 
 
@@ -212,11 +216,15 @@ def parse_args():
     p.add_argument("--list", action="store_true", help="List all checkpoints recursively")
     p.add_argument("--checkpoint", default="models", help="Checkpoint directory")
     p.add_argument("--model_path", type=str, help="Path to specific checkpoint")
-    p.add_argument("--safety_area", default="RoboArm", help="Safety area name used to find checkpoint")
+    p.add_argument(
+        "--safety_area", default="RoboArm", help="Safety area name used to find checkpoint"
+    )
     p.add_argument("--latent_dims", type=int, default=64, help="Latent dimensions")
     p.add_argument("--show_summary", action="store_true", help="Show model summaries")
     p.add_argument("--test_forward", action="store_true", help="Test forward pass")
-    p.add_argument("--device", default="auto", choices=["auto", "cpu", "cuda", "mps"], help="Device")
+    p.add_argument(
+        "--device", default="auto", choices=["auto", "cpu", "cuda", "mps"], help="Device"
+    )
     p.add_argument("--non_strict", action="store_true", help="Load with strict=False")
     p.add_argument("--verbose", "-v", action="store_true", help="Show checkpoint metadata")
     return p.parse_args()

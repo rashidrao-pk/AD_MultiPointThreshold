@@ -1,5 +1,4 @@
 import argparse
-import json
 from pathlib import Path
 
 import matplotlib.pyplot as plt
@@ -153,9 +152,7 @@ def save_case_gallery(df, out_dir, error_type, k=5):
             ax.imshow(img)
 
         ax.set_title(
-            f"{error_type}\n"
-            f"score={row['score']:.5f}\n"
-            f"{Path(row['image_path']).parent.name}",
+            f"{error_type}\nscore={row['score']:.5f}\n{Path(row['image_path']).parent.name}",
             fontsize=9,
         )
         ax.axis("off")
@@ -185,18 +182,20 @@ def save_per_class_performance(df, out_dir):
         recall = tp / (tp + fn + 1e-12)
         f1 = 2 * precision * recall / (precision + recall + 1e-12)
 
-        rows.append({
-            "class_name": class_name,
-            "count": len(g),
-            "tp": int(tp),
-            "fp": int(fp),
-            "fn": int(fn),
-            "tn": int(tn),
-            "precision": float(precision),
-            "recall": float(recall),
-            "f1": float(f1),
-            "mean_score": float(g["score"].mean()),
-        })
+        rows.append(
+            {
+                "class_name": class_name,
+                "count": len(g),
+                "tp": int(tp),
+                "fp": int(fp),
+                "fn": int(fn),
+                "tn": int(tn),
+                "precision": float(precision),
+                "recall": float(recall),
+                "f1": float(f1),
+                "mean_score": float(g["score"].mean()),
+            }
+        )
 
     perf = pd.DataFrame(rows)
     perf.to_csv(out_dir / "per_class_performance.csv", index=False)

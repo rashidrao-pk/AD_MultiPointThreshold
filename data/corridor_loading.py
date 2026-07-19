@@ -1,4 +1,6 @@
 from pathlib import Path
+import random
+
 from PIL import Image
 
 from torch.utils.data import Dataset, DataLoader
@@ -15,10 +17,25 @@ def list_images(root):
     if not root.exists():
         return []
 
-    return sorted([
-        p for p in root.rglob("*")
-        if p.suffix.lower() in IMG_EXTS
-    ])
+    return sorted([p for p in root.rglob("*") if p.suffix.lower() in IMG_EXTS])
+
+
+def split_normal_images(images, train_fraction=0.8, seed=42):
+    """Split normal images into deterministic train and test subsets."""
+    images = list(images)
+    if not images:
+        return [], []
+
+    rng = random.Random(int(seed))
+    shuffled = images[:]
+    rng.shuffle(shuffled)
+
+    train_count = int(round(len(shuffled) * float(train_fraction)))
+    train_count = min(max(train_count, 1), len(shuffled))
+    if len(shuffled) > 1:
+        train_count = min(train_count, len(shuffled) - 1)
+
+    return sorted(shuffled[:train_count]), sorted(shuffled[train_count:])
 
 
 class CorridorDataset(Dataset):
@@ -59,13 +76,21 @@ def get_dataloaders_corridor(cfg):
     train_normal_root = root / "train" / "normal"
     test_root = root / "test"
 
-    train_normal = list_images(train_normal_root)
+    normal_train_fraction = float(getattr(cfg, "normal_train_fraction", 0.8))
+    normal_split_seed = int(getattr(cfg, "normal_split_seed", 42))
+    train_normal_all = list_images(train_normal_root)
+    train_normal, test_normal = split_normal_images(
+        train_normal_all,
+        train_fraction=normal_train_fraction,
+        seed=normal_split_seed,
+    )
 
     test_samples = []
     for cls_dir in sorted(test_root.iterdir()):
         if cls_dir.is_dir():
             for img_path in list_images(cls_dir):
                 test_samples.append((img_path, 1))
+    test_samples = [(p, 0) for p in test_normal] + test_samples
 
     train_samples = [(p, 0) for p in train_normal]
 
@@ -107,7 +132,11 @@ def get_dataloaders_corridor(cfg):
     )
 
     print("[+] Corridor dataset loaded")
+    print(
+        f"    Normal split: {normal_train_fraction:.2f} train / {1.0 - normal_train_fraction:.2f} test"
+    )
     print(f"    Train normal: {len(train_samples)}")
-    print(f"    Test anomalies: {len(test_samples)}")
+    print(f"    Test normal: {len(test_normal)}")
+    print(f"    Test anomalies: {len(test_samples) - len(test_normal)}")
 
     return train_loader, test_loader, train_dataset, test_dataset

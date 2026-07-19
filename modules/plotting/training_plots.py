@@ -74,7 +74,9 @@ def save_reconstruction_preview(encoder, decoder, loader, device, output_path, m
         mu, _ = encoder(images)
         recon = decoder(mu)
 
-    fig, axes = plt.subplots(2, len(images), figsize=(2.4 * len(images), 4.8), constrained_layout=True)
+    fig, axes = plt.subplots(
+        2, len(images), figsize=(2.4 * len(images), 4.8), constrained_layout=True
+    )
     if len(images) == 1:
         axes = axes.reshape(2, 1)
     for idx in range(len(images)):
@@ -100,7 +102,9 @@ def _reconstruction_scores(input_images, reconstructed_images):
     return torch.mean(torch.abs(input_images - reconstructed_images), dim=(1, 2, 3))
 
 
-def _decode_latent_interpolation(encoder, decoder, discriminator, start_image, end_image, device, steps=6):
+def _decode_latent_interpolation(
+    encoder, decoder, discriminator, start_image, end_image, device, steps=6
+):
     """Decode evenly spaced latent vectors between two encoded images."""
     start_batch = start_image.unsqueeze(0).to(device)
     end_batch = end_image.unsqueeze(0).to(device)
@@ -807,9 +811,7 @@ class TrainingPlotter:
         normal_names = {"good", "normal"}
         class_to_idx = getattr(dataset, "class_to_idx", None) or {}
         normal_ids = {
-            int(idx)
-            for name, idx in class_to_idx.items()
-            if str(name).lower() in normal_names
+            int(idx) for name, idx in class_to_idx.items() if str(name).lower() in normal_names
         }
         if not normal_ids:
             normal_ids.add(0)
@@ -829,7 +831,10 @@ class TrainingPlotter:
                 if label in normal_ids:
                     continue
                 by_label.setdefault(label, []).append(image)
-            if sum(len(items) for items in by_label.values()) >= max_examples and len(by_label) >= max_examples:
+            if (
+                sum(len(items) for items in by_label.values()) >= max_examples
+                and len(by_label) >= max_examples
+            ):
                 break
 
         examples = []
@@ -886,7 +891,10 @@ class TrainingPlotter:
             save_training_curves(loss_history, self.run_dir / "training_curves.png")
             save_training_curves(
                 loss_history,
-                self.run_dir / "plots" / "training_curves" / f"training_curves_epoch_{epoch:04d}.png",
+                self.run_dir
+                / "plots"
+                / "training_curves"
+                / f"training_curves_epoch_{epoch:04d}.png",
             )
             save_reconstruction_preview(
                 encoder,
@@ -902,7 +910,10 @@ class TrainingPlotter:
                 self.fixed_image,
                 random_image,
                 device,
-                self.run_dir / "plots" / "training_evolution" / f"training_evolution_epoch_{epoch:04d}.png",
+                self.run_dir
+                / "plots"
+                / "training_evolution"
+                / f"training_evolution_epoch_{epoch:04d}.png",
                 anomaly_examples=self.fixed_anomaly_examples,
             )
 
@@ -930,7 +941,10 @@ class TrainingPlotter:
                 train_loader,
                 val_loader,
                 device,
-                self.run_dir / "plots" / "score_distribution" / f"score_distribution_epoch_{epoch:04d}.png",
+                self.run_dir
+                / "plots"
+                / "score_distribution"
+                / f"score_distribution_epoch_{epoch:04d}.png",
                 max_batches=self.max_score_batches,
             )
 

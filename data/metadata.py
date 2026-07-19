@@ -7,9 +7,7 @@ def sample_records(dataset, limit=None):
     if limit is not None:
         samples = samples[:limit]
 
-    idx_to_class = {
-        idx: name for name, idx in getattr(dataset, "class_to_idx", {}).items()
-    }
+    idx_to_class = {idx: name for name, idx in getattr(dataset, "class_to_idx", {}).items()}
 
     records = []
     for path, label in samples:

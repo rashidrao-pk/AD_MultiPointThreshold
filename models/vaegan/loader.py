@@ -2,6 +2,7 @@ from pathlib import Path
 import torch
 from .model import Encoder, Decoder, Discriminator
 
+
 def get_checkpoint_path(model_cfg, data_cfg):
     """Build the expected checkpoint path for a dataset/model configuration."""
     model_name = str(getattr(model_cfg, "name", "advis_vaegan")).lower().replace("-", "_")
@@ -9,7 +10,7 @@ def get_checkpoint_path(model_cfg, data_cfg):
         model_name = "basic_ae"
     if model_name in {"vae", "variational_autoencoder"}:
         model_name = "vanilla_vae"
-    # i think they all have this format, to check... 
+    # i think they all have this format, to check...
     if data_cfg.name == "MVTec":
         dataset_folder = "AD_MVTec"
 
@@ -22,12 +23,19 @@ def get_checkpoint_path(model_cfg, data_cfg):
     else:
         raise ValueError(f"Unknown dataset name: {data_cfg.name}")
 
-    if model_name in {"advis", "advis_vaegan", "advis_vae_gan", "vae_gan", "vaegan", "simple_vaegan"}:
+    if model_name in {
+        "advis",
+        "advis_vaegan",
+        "advis_vae_gan",
+        "vae_gan",
+        "vaegan",
+        "simple_vaegan",
+    }:
         ckpt_name = f"model_{data_cfg.category}_{model_cfg.latent_dim}.pt"
     else:
         ckpt_name = f"model_{model_name}_{data_cfg.category}_{model_cfg.latent_dim}.pt"
 
-    return Path(model_cfg.checkpoint_root) / dataset_folder / 'checkpoints' / ckpt_name
+    return Path(model_cfg.checkpoint_root) / dataset_folder / "checkpoints" / ckpt_name
 
 
 def load_model(config, device):
@@ -54,9 +62,9 @@ def load_model(config, device):
     encoder = Encoder(z_size=model_cfg.latent_dim).to(device)
     decoder = Decoder(z_size=model_cfg.latent_dim).to(device)
     discriminator = Discriminator().to(device)
-    
-    encoder.load_state_dict(checkpoint['encoder_state_dict'])
-    decoder.load_state_dict(checkpoint['decoder_state_dict'])
-    discriminator.load_state_dict(checkpoint['discriminator_state_dict'])
+
+    encoder.load_state_dict(checkpoint["encoder_state_dict"])
+    decoder.load_state_dict(checkpoint["decoder_state_dict"])
+    discriminator.load_state_dict(checkpoint["discriminator_state_dict"])
 
     return encoder, decoder, discriminator

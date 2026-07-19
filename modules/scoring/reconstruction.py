@@ -35,17 +35,17 @@ def _reconstruction_score(loader, enc, dec, device, metric="mse"):
             diff = data - recon
 
             if metric == "mse":
-                batch_scores = (diff ** 2).mean(dim=(1, 2, 3))
+                batch_scores = (diff**2).mean(dim=(1, 2, 3))
             elif metric == "l1":
                 batch_scores = diff.abs().mean(dim=(1, 2, 3))
             elif metric == "l2":
-                batch_scores = torch.sqrt((diff ** 2).sum(dim=(1, 2, 3)))
+                batch_scores = torch.sqrt((diff**2).sum(dim=(1, 2, 3)))
             else:
                 raise ValueError(f"Unknown reconstruction metric: {metric}")
 
             scores.append(batch_scores.detach().cpu())
             labels.append(batch_labels.detach().cpu())
-            
+
     return torch.cat(scores), torch.cat(labels)
 
 
@@ -67,7 +67,9 @@ def reconstruction_quantile_score(loader, enc, dec, device, quantiles):
             mu, _ = enc(data)
             recon = dec(mu)
 
-            anomaly_map = (data - recon).abs()  ## TODO: we can also try squared error here, but for now we stick to absolute error as it is more interpretable and less sensitive to outliers.
+            anomaly_map = (
+                data - recon
+            ).abs()  ## TODO: we can also try squared error here, but for now we stick to absolute error as it is more interpretable and less sensitive to outliers.
             flat_map = anomaly_map.view(anomaly_map.size(0), -1)
 
             batch_scores = torch.quantile(
@@ -78,6 +80,5 @@ def reconstruction_quantile_score(loader, enc, dec, device, quantiles):
 
             scores.append(batch_scores.detach().cpu())
             labels.append(batch_labels.detach().cpu())
-        
 
     return torch.cat(scores), torch.cat(labels)

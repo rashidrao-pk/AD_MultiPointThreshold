@@ -101,10 +101,7 @@ def _sse_headers(handler):
 
 def _sse_event(handler, event, payload):
     """Send one Server-Sent Events message."""
-    body = (
-        f"event: {event}\n"
-        f"data: {json.dumps(payload, default=str)}\n\n"
-    ).encode("utf-8")
+    body = (f"event: {event}\ndata: {json.dumps(payload, default=str)}\n\n").encode("utf-8")
     handler.wfile.write(body)
     handler.wfile.flush()
 
@@ -177,7 +174,9 @@ def list_config_files():
             )
 
     if RUNS_ROOT.exists():
-        for path in sorted(RUNS_ROOT.glob("*/config.yaml"), key=lambda item: item.stat().st_mtime, reverse=True):
+        for path in sorted(
+            RUNS_ROOT.glob("*/config.yaml"), key=lambda item: item.stat().st_mtime, reverse=True
+        ):
             configs.append(
                 {
                     "name": f"{path.parent.name}/config.yaml",
@@ -197,9 +196,8 @@ def _safe_config_path(config_path):
     if path.suffix.lower() not in {".yaml", ".yml"}:
         raise ValueError("Config path must be a YAML file.")
     if (
-        (allowed_configs not in path.parents and path != allowed_configs)
-        and allowed_runs not in path.parents
-    ):
+        allowed_configs not in path.parents and path != allowed_configs
+    ) and allowed_runs not in path.parents:
         raise ValueError("Config path must be inside configs/ or results/runs/.")
     return path
 
@@ -437,10 +435,7 @@ def _read_vector_file(path, max_rows=5000):
     if isinstance(payload, list):
         rows = payload[:max_rows]
         if rows and isinstance(rows[0], dict):
-            rows = [
-                {key: _coerce_scalar(value) for key, value in row.items()}
-                for row in rows
-            ]
+            rows = [{key: _coerce_scalar(value) for key, value in row.items()} for row in rows]
         else:
             rows = [{"index": idx, "value": value} for idx, value in enumerate(rows)]
     elif isinstance(payload, dict):
@@ -505,10 +500,7 @@ def run_details(run_path):
 
 def run_status(run_path):
     """Build a live status payload from run files."""
-    epochs = {
-        tab: list_epochs(run_path, tab)
-        for tab in PLOT_TYPES
-    }
+    epochs = {tab: list_epochs(run_path, tab) for tab in PLOT_TYPES}
     history = read_loss_history(run_path)
     latest_record = history[-1] if history else {}
     loss_path = run_path / LOSS_HISTORY
@@ -527,10 +519,7 @@ def run_status(run_path):
         "run": _relative_to_root(run_path),
         "run_details": run_details(run_path),
         "epochs": epochs,
-        "latest": {
-            tab: values[-1] if values else None
-            for tab, values in epochs.items()
-        },
+        "latest": {tab: values[-1] if values else None for tab, values in epochs.items()},
         "loss_history": history,
         "latest_metrics": latest_record,
         "history_rows": len(history),
@@ -598,11 +587,7 @@ class TrainingViewerHandler(SimpleHTTPRequestHandler):
             run_path = _safe_run_path(query.get("run", [""])[0])
             tabs = query.get("tab", [])
             selected_tabs = tabs or list(PLOT_TYPES)
-            epochs = {
-                tab: list_epochs(run_path, tab)
-                for tab in selected_tabs
-                if tab in PLOT_TYPES
-            }
+            epochs = {tab: list_epochs(run_path, tab) for tab in selected_tabs if tab in PLOT_TYPES}
             return _json_response(
                 self,
                 {
@@ -610,8 +595,7 @@ class TrainingViewerHandler(SimpleHTTPRequestHandler):
                     "run_details": run_details(run_path),
                     "epochs": epochs,
                     "latest": {
-                        tab: values[-1] if values else None
-                        for tab, values in epochs.items()
+                        tab: values[-1] if values else None for tab, values in epochs.items()
                     },
                 },
             )

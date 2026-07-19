@@ -79,11 +79,7 @@ def get_trainer(name):
 def list_trainable_models():
     """Return canonical model names that should run for --model all."""
     preferred_order = ["advis_vaegan", "vanilla_vae", "basic_ae"]
-    return [
-        name
-        for name in preferred_order
-        if MODEL_INFO.get(name, {}).get("trainable")
-    ]
+    return [name for name in preferred_order if MODEL_INFO.get(name, {}).get("trainable")]
 
 
 def get_checkpoint_loader(name):

@@ -37,13 +37,12 @@ class MultiPointThreshold(ThresholdModel):
             return exceed.all(dim=1).int()
 
         if self.decision_rule == "majority":
-            # more than half 
+            # more than half
             required = scores.shape[1] // 2 + 1
             return (exceed.sum(dim=1) >= required).int()
 
         raise ValueError(f"Unknown decision_rule: {self.decision_rule}")
 
-    
 
 def fit_multi_point(scores, quantiles, percentile=95, decision_rule="any"):
     """
@@ -61,9 +60,7 @@ def fit_multi_point(scores, quantiles, percentile=95, decision_rule="any"):
     scores = scores.float()
 
     if scores.dim() != 2:
-        raise ValueError(
-            f"Expected scores with shape [N, K], got {scores.shape}"
-        )
+        raise ValueError(f"Expected scores with shape [N, K], got {scores.shape}")
 
     thresholds = torch.quantile(
         scores,

@@ -39,5 +39,5 @@ Describe expected behavior.
 # Logs / Traceback
 
 ```bash
-Paste error logs here   
+Paste error logs here
 ```
