@@ -52,10 +52,17 @@ python -m experiments.run_vaegan --config configs/hazards_mac.yaml --force
 
 ```bash
 python -m modules.plotting.plot_experiment_results --run_dir results/experiments/E00008
-````
+```
+
+Or find the latest completed experiment from the config file's `output.dir` and matching model/data/scoring/threshold settings:
+
+```bash
+python -m modules.plotting.plot_experiment_results --config configs/mvtec_mac.yaml
+```
 
 ```bash
 # RUN Web App to see live score and dynamics
 python app.py
 # visit --> http://127.0.0.1:8000
 ```
+````

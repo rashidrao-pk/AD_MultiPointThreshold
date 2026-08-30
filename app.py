@@ -10,7 +10,7 @@ import argparse
 import errno
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
-from urllib.parse import parse_qs, unquote, urlparse
+from urllib.parse import parse_qs, quote, unquote, urlparse
 
 import yaml
 
@@ -107,37 +107,112 @@ def _sse_event(handler, event, payload):
 
 
 def _safe_run_path(run):
-    """Resolve a run path under the project root."""
+    """Resolve a run path under the project root or configured results folders."""
     run = unquote(str(run or "")).strip()
     if not run:
         raise ValueError("Missing run path.")
 
-    path = Path(run)
-    if not path.is_absolute():
-        path = ROOT / path
-    path = path.resolve()
+    candidates = []
+    raw_path = Path(run)
+    if raw_path.is_absolute():
+        candidates.append(raw_path)
+    else:
+        candidates.append(ROOT / raw_path)
+        for result_root in configured_result_roots():
+            candidates.append(result_root / raw_path)
+            if raw_path.parts and raw_path.parts[0] == "results":
+                candidates.append(result_root / Path(*raw_path.parts[1:]))
 
-    if ROOT not in path.parents and path != ROOT:
-        raise ValueError("Run path must stay inside the project folder.")
-    if not path.exists():
-        raise FileNotFoundError(f"Run path does not exist: {path}")
-    return path
+    for candidate in candidates:
+        path = candidate.resolve()
+        if _is_allowed_path(path) and path.exists():
+            return path
+
+    raise FileNotFoundError(f"Run path does not exist in project/configured results: {run}")
 
 
 def _relative_to_root(path):
     """Return a browser-friendly relative path."""
-    return path.resolve().relative_to(ROOT).as_posix()
+    path = path.resolve()
+    try:
+        return path.relative_to(ROOT).as_posix()
+    except ValueError:
+        return path.as_posix()
+
+
+def _is_relative_to(path, root):
+    """Return whether a path is inside a root path."""
+    path = path.resolve()
+    root = root.resolve()
+    return path == root or root in path.parents
+
+
+def _is_allowed_path(path):
+    """Return whether a path is inside the project or configured results folders."""
+    path = path.resolve()
+    return _is_relative_to(path, ROOT) or any(
+        _is_relative_to(path, root) for root in configured_result_roots()
+    )
+
+
+def _file_url(path):
+    """Return a browser URL for a project or external result artifact."""
+    path = Path(path).resolve()
+    try:
+        return "/" + path.relative_to(ROOT).as_posix()
+    except ValueError:
+        return f"/artifact?path={quote(path.as_posix())}"
+
+
+def _config_output_dir(config_path):
+    """Read output.dir from a YAML config file, if present."""
+    try:
+        payload = yaml.safe_load(config_path.read_text(encoding="utf-8")) or {}
+    except Exception:
+        return None
+
+    output_dir = (payload.get("output") or {}).get("dir")
+    if not output_dir:
+        return None
+
+    path = Path(str(output_dir).replace("\\", "/"))
+    if not path.is_absolute():
+        path = ROOT / path
+    return path.resolve()
+
+
+def configured_result_roots():
+    """Return result roots from repo defaults and config output.dir values."""
+    roots = [ROOT / "results"]
+    if CONFIGS_ROOT.exists():
+        for config_path in sorted(CONFIGS_ROOT.glob("*.y*ml")):
+            output_dir = _config_output_dir(config_path)
+            if output_dir is not None:
+                roots.append(output_dir)
+
+    unique = []
+    seen = set()
+    for root in roots:
+        resolved = root.resolve()
+        if resolved not in seen:
+            unique.append(resolved)
+            seen.add(resolved)
+    return unique
 
 
 def list_runs():
     """Return known result run folders."""
-    if not RUNS_ROOT.exists():
-        return []
-    runs = [path for path in RUNS_ROOT.iterdir() if path.is_dir()]
+    runs = []
+    for result_root in configured_result_roots():
+        runs_root = result_root / "runs"
+        if runs_root.exists():
+            runs.extend(path for path in runs_root.iterdir() if path.is_dir())
     return [
         {
             "name": path.name,
             "path": _relative_to_root(path),
+            "url": _file_url(path),
+            "result_root": _relative_to_root(path.parents[1]) if len(path.parents) > 1 else "",
             "mtime": path.stat().st_mtime,
         }
         for path in sorted(runs, key=lambda item: item.stat().st_mtime, reverse=True)
@@ -146,13 +221,17 @@ def list_runs():
 
 def list_experiments():
     """Return known inference experiment folders."""
-    if not EXPERIMENTS_ROOT.exists():
-        return []
-    experiments = [path for path in EXPERIMENTS_ROOT.iterdir() if path.is_dir()]
+    experiments = []
+    for result_root in configured_result_roots():
+        experiments_root = result_root / "experiments"
+        if experiments_root.exists():
+            experiments.extend(path for path in experiments_root.iterdir() if path.is_dir())
     return [
         {
             "name": path.name,
             "path": _relative_to_root(path),
+            "url": _file_url(path),
+            "result_root": _relative_to_root(path.parents[1]) if len(path.parents) > 1 else "",
             "mtime": path.stat().st_mtime,
         }
         for path in sorted(experiments, key=lambda item: item.stat().st_mtime, reverse=True)
@@ -168,19 +247,24 @@ def list_config_files():
                 {
                     "name": path.name,
                     "path": _relative_to_root(path),
+                    "url": _file_url(path),
                     "source": "configs",
                     "mtime": path.stat().st_mtime,
                 }
             )
 
-    if RUNS_ROOT.exists():
+    for result_root in configured_result_roots():
+        runs_root = result_root / "runs"
+        if not runs_root.exists():
+            continue
         for path in sorted(
-            RUNS_ROOT.glob("*/config.yaml"), key=lambda item: item.stat().st_mtime, reverse=True
+            runs_root.glob("*/config.yaml"), key=lambda item: item.stat().st_mtime, reverse=True
         ):
             configs.append(
                 {
                     "name": f"{path.parent.name}/config.yaml",
                     "path": _relative_to_root(path),
+                    "url": _file_url(path),
                     "source": "runs",
                     "mtime": path.stat().st_mtime,
                 }
@@ -192,13 +276,14 @@ def _safe_config_path(config_path):
     """Resolve a config path under configs or saved training runs."""
     path = _safe_run_path(config_path)
     allowed_configs = CONFIGS_ROOT.resolve()
-    allowed_runs = RUNS_ROOT.resolve()
     if path.suffix.lower() not in {".yaml", ".yml"}:
         raise ValueError("Config path must be a YAML file.")
-    if (
-        allowed_configs not in path.parents and path != allowed_configs
-    ) and allowed_runs not in path.parents:
-        raise ValueError("Config path must be inside configs/ or results/runs/.")
+    in_configs = _is_relative_to(path, allowed_configs)
+    in_runs = any(
+        _is_relative_to(path, result_root / "runs") for result_root in configured_result_roots()
+    )
+    if not in_configs and not in_runs:
+        raise ValueError("Config path must be inside configs/ or configured results/runs/.")
     return path
 
 
@@ -207,10 +292,13 @@ def read_config_file(config_path):
     path = _safe_config_path(config_path)
     text = path.read_text(encoding="utf-8")
     parsed = yaml.safe_load(text) or {}
-    is_run_config = RUNS_ROOT.resolve() in path.parents
+    is_run_config = any(
+        _is_relative_to(path, result_root / "runs") for result_root in configured_result_roots()
+    )
     return {
         "name": f"{path.parent.name}/{path.name}" if is_run_config else path.name,
         "path": _relative_to_root(path),
+        "url": _file_url(path),
         "source": "runs" if is_run_config else "configs",
         "text": text,
         "parsed": parsed,
@@ -230,6 +318,7 @@ def inference_plot_status(run_path):
         plots[tab] = {
             "exists": exists,
             "path": _relative_to_root(path) if exists else None,
+            "url": _file_url(path) if exists else None,
             "mtime": path.stat().st_mtime if exists else None,
         }
 
@@ -298,11 +387,10 @@ def _read_csv_rows(path):
 
 
 def _safe_result_file(path_arg):
-    """Resolve a CSV/JSON result file under results/."""
+    """Resolve a CSV/JSON result file under configured results folders."""
     path = _safe_run_path(path_arg)
-    results_root = (ROOT / "results").resolve()
-    if results_root not in path.parents and path != results_root:
-        raise ValueError("Vector file must be inside results/.")
+    if not any(_is_relative_to(path, result_root) for result_root in configured_result_roots()):
+        raise ValueError("Vector file must be inside configured results folders.")
     if path.suffix.lower() not in VECTOR_EXTENSIONS:
         raise ValueError("Vector file must be a CSV or JSON file.")
     if _is_ignored_vector_file(path):
@@ -378,27 +466,28 @@ def _numeric_columns(rows):
 
 def _list_vector_files():
     """Return CSV/JSON result files that can feed Plotly charts."""
-    results_root = ROOT / "results"
     files = []
-    if not results_root.exists():
-        return files
+    for results_root in configured_result_roots():
+        if not results_root.exists():
+            continue
 
-    for path in results_root.rglob("*"):
-        if not path.is_file() or path.suffix.lower() not in VECTOR_EXTENSIONS:
-            continue
-        if _is_ignored_vector_file(path):
-            continue
-        # Keep the browser responsive by listing huge CSVs but loading them sampled.
-        files.append(
-            {
-                "name": path.name,
-                "path": _relative_to_root(path),
-                "parent": _relative_to_root(path.parent),
-                "size_kb": round(path.stat().st_size / 1024, 1),
-                "mtime": path.stat().st_mtime,
-                "type": path.suffix.lower().lstrip("."),
-            }
-        )
+        for path in results_root.rglob("*"):
+            if not path.is_file() or path.suffix.lower() not in VECTOR_EXTENSIONS:
+                continue
+            if _is_ignored_vector_file(path):
+                continue
+            # Keep the browser responsive by listing huge CSVs but loading them sampled.
+            files.append(
+                {
+                    "name": path.name,
+                    "path": _relative_to_root(path),
+                    "parent": _relative_to_root(path.parent),
+                    "result_root": _relative_to_root(results_root),
+                    "size_kb": round(path.stat().st_size / 1024, 1),
+                    "mtime": path.stat().st_mtime,
+                    "type": path.suffix.lower().lstrip("."),
+                }
+            )
 
     return sorted(files, key=lambda item: item["mtime"], reverse=True)
 
@@ -461,10 +550,9 @@ def _read_vector_file(path, max_rows=5000):
 def find_run_record(run_path):
     """Find the training-run registry row matching a run directory."""
     run_dir = str(run_path.resolve())
-    candidates = [
-        ROOT / "results" / "training_runs.csv",
-        ROOT / "results" / "runs.csv",
-    ]
+    candidates = []
+    for result_root in configured_result_roots():
+        candidates.extend([result_root / "training_runs.csv", result_root / "runs.csv"])
     for path in candidates:
         for row in _read_csv_rows(path):
             row_run_dir = row.get("run_dir") or row.get("path") or ""
@@ -553,6 +641,8 @@ class TrainingViewerHandler(SimpleHTTPRequestHandler):
         if parsed.path == "/plotly":
             self.path = "/app/plotly.html"
             return super().do_GET()
+        if parsed.path == "/artifact":
+            return self._handle_artifact(parsed)
         if parsed.path == "/api/runs":
             return _json_response(self, {"runs": list_runs()})
         if parsed.path == "/api/experiments":
@@ -627,6 +717,24 @@ class TrainingViewerHandler(SimpleHTTPRequestHandler):
             return _json_response(self, read_config_file(query.get("path", [""])[0]))
         except Exception as exc:
             return _json_response(self, {"error": str(exc)}, status=400)
+
+    def _handle_artifact(self, parsed):
+        """Serve a project or configured-results artifact file."""
+        query = parse_qs(parsed.query)
+        try:
+            path = _safe_run_path(query.get("path", [""])[0])
+            if not path.is_file():
+                raise FileNotFoundError(f"Artifact is not a file: {path}")
+        except Exception as exc:
+            return _json_response(self, {"error": str(exc)}, status=404)
+
+        body = path.read_bytes()
+        self.send_response(200)
+        self.send_header("Content-Type", self.guess_type(path.name))
+        self.send_header("Content-Length", str(len(body)))
+        self.send_header("Cache-Control", "no-store")
+        self.end_headers()
+        self.wfile.write(body)
 
     def _handle_vector_data(self, parsed):
         """Return CSV/JSON rows for browser-side Plotly charts."""

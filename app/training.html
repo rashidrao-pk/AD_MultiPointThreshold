@@ -759,7 +759,8 @@
       function currentServerImagePath() {
         const tab = tabs[state.tab];
         const epoch = padEpoch(currentEpoch());
-        return `../${normalizeRunPath(runPath.value).replace(/^(\.\.\/)+/, "")}/${tab.folder}/${tab.prefix}${epoch}.png`;
+        const path = `${normalizeRunPath(runPath.value).replace(/^(\.\.\/)+/, "")}/${tab.folder}/${tab.prefix}${epoch}.png`;
+        return `/artifact?path=${encodeURIComponent(path)}`;
       }
 
       function updateView() {

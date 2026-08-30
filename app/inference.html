@@ -389,7 +389,7 @@
 
       function currentImagePath() {
         const plot = state.payload?.plots?.[state.tab];
-        return plot?.path ? `../${plot.path}` : "";
+        return plot?.url || (plot?.path ? `/artifact?path=${encodeURIComponent(plot.path)}` : "");
       }
 
       function updateView() {

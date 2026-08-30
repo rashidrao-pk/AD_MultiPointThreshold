@@ -1,4 +1,5 @@
 import argparse
+import numpy as np
 
 from utils import apply_config_overrides, read_config, set_device
 from data import load_data
@@ -140,19 +141,12 @@ def run_single_experiment(config_path, suffix, force, overrides=None):
 
     results = {}
 
-    try:
-        ranking_result = ranking_metrics(
-            test_scores.detach().cpu(),
-            binary_test_labels,
-        )
-    except Exception as error:
-        print(f"[!] Ranking metrics failed with raw scores: {error}")
-        print("[+] Ranking metrics computed using binary predictions instead.")
-
-        ranking_result = ranking_metrics(
-            prediction.detach().cpu(),
-            binary_test_labels,
-        )
+    ranking_result = ranking_metrics(
+        test_scores.detach().cpu(),
+        binary_test_labels,
+    )
+    if len(np.unique(np.asarray(binary_test_labels).astype(int))) < 2:
+        print("[!] Ranking metrics are undefined because the test set has only one class.")
 
     results.update(ranking_result)
     print(f"[+] Ranking metrics: {ranking_result}")

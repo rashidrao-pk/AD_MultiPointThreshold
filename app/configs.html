@@ -347,7 +347,7 @@
       details.path.textContent = config.path || "-";
       details.updated.textContent = formatTime(config.mtime);
       previewTitle.textContent = config.name || "Preview";
-      openRaw.href = `/${config.path}`;
+      openRaw.href = config.url || `/artifact?path=${encodeURIComponent(config.path)}`;
     }
 
     function escapeHtml(value) {

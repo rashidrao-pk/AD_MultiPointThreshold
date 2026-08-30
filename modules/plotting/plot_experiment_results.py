@@ -1,4 +1,5 @@
 import argparse
+import csv
 from pathlib import Path
 
 import matplotlib.pyplot as plt
@@ -10,11 +11,74 @@ from sklearn.metrics import ConfusionMatrixDisplay, RocCurveDisplay, PrecisionRe
 from data import load_data
 from models.vaegan import load_model
 from utils import read_config
+from utils.experiment_saver import experiment_hash
 from .inference_diagnostics import (
     save_inference_latent_space,
     save_inference_score_distribution,
     save_inference_validation_samples,
 )
+
+
+def _resolve_project_path(path):
+    """Resolve a path relative to the project root."""
+    path = Path(str(path).replace("\\", "/"))
+    if path.is_absolute():
+        return path
+    return Path.cwd() / path
+
+
+def _read_runs_csv(path):
+    """Read experiment registry rows from a runs.csv file."""
+    if not path.exists():
+        return []
+
+    with open(path, "r", newline="", encoding="utf-8") as handle:
+        return list(csv.DictReader(handle))
+
+
+def _row_matches_config(row, config, suffix=""):
+    """Return whether a runs.csv row matches the selected experiment config."""
+    if row.get("hash") == experiment_hash(config, suffix):
+        return True
+
+    return all(
+        str(row.get(column, "")) == str(value)
+        for column, value in (
+            ("status", "done"),
+            ("model", getattr(config.model, "name", "")),
+            ("dataset", getattr(config.data, "name", "")),
+            ("category", getattr(config.data, "category", "")),
+            ("scoring", getattr(config.scoring, "method", "")),
+            ("threshold", getattr(config.threshold, "method", "")),
+            ("percentile", getattr(config.threshold, "percentile", "")),
+            ("decision_rule", getattr(config.threshold, "decision_rule", "")),
+            ("suffix", suffix),
+        )
+    )
+
+
+def resolve_run_dir_from_config(config_path, suffix=""):
+    """Find the latest completed experiment run directory matching a config file."""
+    config = read_config(config_path)
+    output_dir = _resolve_project_path(config.output.dir)
+    runs_csv_path = output_dir / "runs.csv"
+    rows = [
+        row
+        for row in _read_runs_csv(runs_csv_path)
+        if row.get("status") == "done" and _row_matches_config(row, config, suffix=suffix)
+    ]
+
+    if not rows:
+        raise FileNotFoundError(
+            f"No completed experiment found for config {config_path} in {runs_csv_path}."
+        )
+
+    row = rows[-1]
+    run_dir = row.get("run_dir") or row.get("path")
+    if not run_dir:
+        raise ValueError(f"Matched runs.csv row has no run_dir: {row}")
+
+    return _resolve_project_path(run_dir)
 
 
 def read_predictions(run_dir):
@@ -273,7 +337,25 @@ def main(run_dir):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("--run_dir", required=True)
+    parser.add_argument(
+        "--run_dir", default=None, help="Experiment run directory, e.g. results/experiments/E00008."
+    )
+    parser.add_argument(
+        "--config",
+        default=None,
+        help="Config file used to find the latest matching experiment run.",
+    )
+    parser.add_argument(
+        "--suffix", default="", help="Optional experiment suffix used when matching --config."
+    )
     args = parser.parse_args()
 
-    main(args.run_dir)
+    if args.run_dir is None and args.config is None:
+        parser.error("one of --run_dir or --config is required")
+
+    selected_run_dir = args.run_dir
+    if selected_run_dir is None:
+        selected_run_dir = resolve_run_dir_from_config(args.config, suffix=args.suffix)
+        print(f"[+] Selected experiment run: {selected_run_dir}")
+
+    main(selected_run_dir)
