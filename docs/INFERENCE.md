@@ -75,3 +75,40 @@ python app.py
 # visit --> http://127.0.0.1:8000
 ```
 ````
+
+
+
+
+## 8. Inference with Different Datasets
+
+### Inference Configuration
+```bash
+# Robotics Hazards dataset
+python utils/scripts/inference.py \
+  --dataset Robotics_Hazards \
+  --safety_area ALL \
+  --checkpoints models/ \
+  --threshold_dir results/thresholds/
+
+# MVtec dataset
+python utils/scripts/inference.py \
+  --dataset MVtec \
+  --object hazelnut \
+  --checkpoints models/MVtec/ \
+  --threshold_dir results/thresholds/
+
+# DistriMuSe synthetic
+python utils/scripts/inference.py \
+  --dataset Cobots_Synthetic \
+  --safety_area RoboArm \
+  --checkpoints models/ \
+  --threshold_dir results/thresholds/
+```
+
+### Inference Parameters
+- `--dataset` - Dataset selection: MVtec, Robotics_Hazards, Cobots_Synthetic
+- `--safety_area` - Safety area to evaluate: PLeft, PRight, RoboArm, ConvBelt, or ALL
+- `--latent_dims` - Must match training latent dimensions
+- `--quantile` - Anomaly score quantile threshold
+- `--max_frames` - Maximum frames to process (None = all)
+- `--verbose_level` - Output verbosity: 0-2

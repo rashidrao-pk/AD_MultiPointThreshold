@@ -209,3 +209,97 @@ python -m modules.training.train --config configs/mvtec_mac.yaml --model basic_a
 # or all models
 python -m modules.training.train --config configs/mvtec_mac.yaml --model all --force
 ```
+
+
+
+
+## 6. Training Models
+
+### Quick Start Training
+
+Train on a single safety area:
+```bash
+# Train on RoboArm area with DistriMuSe dataset (default)
+python utils/scripts/train.py --safety_area RoboArm
+
+# Train on specific dataset
+python utils/scripts/train.py --dataset Robotics_Hazards --safety_area PLeft
+python utils/scripts/train.py --dataset MVtec --safety_area RoboArm
+```
+
+### Train All Safety Areas Sequentially
+```bash
+# Train all 4 safety areas: PLeft, PRight, RoboArm, ConvBelt
+python utils/scripts/train.py --safety_area ALL
+```
+
+### Advanced Training Options
+
+```bash
+# Custom training parameters
+python utils/scripts/train.py \
+  --dataset Cobots_Synthetic \
+  --safety_area RoboArm \
+  --epochs 300 \
+  --batch_size 32 \
+  --latent_dims 128 \
+  --learning_rate_enc_dec 0.001 \
+  --learning_rate_dis 0.0001 \
+  --augmentation_type custom \
+  --save_figures \
+  --verbose_level 2
+
+# Use different experimental settings
+python utils/scripts/train.py --safety_area RoboArm --exp_type E3
+
+# Force rebuild train/val split
+python utils/scripts/train.py --safety_area RoboArm --force_rebuild_split
+```
+
+### Training Configuration
+
+Key training parameters:
+- `--epochs` (default: 200) - Number of training epochs
+- `--batch_size` (default: 16) - Batch size for training
+- `--latent_dims` (default: 64) - Latent space dimensions
+- `--augmentation_type` - Choices: "min", "custom"
+- `--exp_type` - Experiment type: "E1", "E2", "E3"
+- `--save_figures` - Save reconstruction figures during training
+- `--verbose_level` - Verbosity: 0, 1, or 2
+
+### Dataset-Specific Training
+
+```bash
+# MVtec dataset
+python utils/scripts/train.py --dataset MVtec --safety_area RoboArm --epochs 200
+
+# Robotics Hazards
+python utils/scripts/train.py --dataset Robotics_Hazards --safety_area ConvBelt
+
+# DistriMuSe synthetic (default)
+python utils/scripts/train.py --dataset Cobots_Synthetic --safety_area ALL
+```
+
+
+## 9. Output Structure
+
+Training generates organized outputs:
+
+```
+results/
+├── models/                          # Trained model checkpoints
+│   ├── model_RoboArm_64.pt
+│   ├── model_PLeft_64.pt
+│   ├── model_PRight_64.pt
+│   └── model_ConvBelt_64.pt
+├── training/
+│   ├── RoboArm_64/                 # Training curves & logs
+│   │   ├── history_RoboArm_64.png
+│   │   └── log_file_full.txt
+│   └── ...
+└── monitor/                         # Monitoring visualizations (if --save_figures)
+    ├── RoboArm_64/
+    │   ├── train_epoch_*.png
+    │   └── test_epoch_*.png
+    └── ...
+```
