@@ -23,9 +23,10 @@ BASE REPO
 Dataset source files and public model checkpoints are listed in the collapsible download section below.
 
 ## 1. Start With Environment
+Install Python [using Conda](/docs/Setup.md##install-conda)
 
 ```bash
-conda create -n AD python==3.9.18
+conda create -n AD python==3.9.18 -y
 conda activate AD
 conda install pytorch torchvision torchaudio pytorch-cuda=11.8 -c pytorch -c nvidia
 ```
