@@ -137,7 +137,7 @@ def _make_run_dir(config, suffix=""):
     run_name = f"{dataset}_{category}_{model_name}_{timestamp}"
     if suffix:
         run_name += f"_{suffix}"
-    run_dir = Path(config.output.dir) / "runs" / run_name
+    run_dir = Path(config.output.dir) / "experiments_training" / run_name
     run_dir.mkdir(parents=True, exist_ok=True)
     return run_dir
 

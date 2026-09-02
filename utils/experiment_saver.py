@@ -59,7 +59,7 @@ def should_skip_experiment(config, suffix: str = "", force: bool = False):
     if force:
         return False, None
 
-    runs_csv_path = Path(config.output.dir) / "runs.csv"
+    runs_csv_path = Path(config.output.dir) / "runs_inference.csv"
     exp_hash = experiment_hash(config, suffix)
     existing = find_existing_experiment(runs_csv_path, exp_hash)
 
@@ -331,8 +331,8 @@ def save_experiment_run(
 ):
     """Persist experiment outputs, metrics, config, predictions, and run metadata."""
     root = Path(config.output.dir)
-    experiments_dir = root / "experiments"
-    runs_csv_path = root / "runs.csv"
+    experiments_dir = root / "experiments_inference"
+    runs_csv_path = root / "runs_inference.csv"
 
     exp_hash = experiment_hash(config, suffix)
     exp_id = get_next_experiment_id_from_csv(runs_csv_path)

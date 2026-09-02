@@ -16,8 +16,8 @@ import yaml
 
 
 ROOT = Path(__file__).resolve().parent
-RUNS_ROOT = ROOT / "results" / "runs"
-EXPERIMENTS_ROOT = ROOT / "results" / "experiments"
+RUNS_ROOT = ROOT / "results" / "experiments_training"
+EXPERIMENTS_ROOT = ROOT / "results" / "experiments_inference"
 CONFIGS_ROOT = ROOT / "configs"
 DEFAULT_HOST = "127.0.0.1"
 DEFAULT_PORT = 8000
@@ -204,7 +204,7 @@ def list_runs():
     """Return known result run folders."""
     runs = []
     for result_root in configured_result_roots():
-        runs_root = result_root / "runs"
+        runs_root = result_root / "experiments_training"
         if runs_root.exists():
             runs.extend(path for path in runs_root.iterdir() if path.is_dir())
     return [
@@ -280,7 +280,8 @@ def _safe_config_path(config_path):
         raise ValueError("Config path must be a YAML file.")
     in_configs = _is_relative_to(path, allowed_configs)
     in_runs = any(
-        _is_relative_to(path, result_root / "runs") for result_root in configured_result_roots()
+        _is_relative_to(path, result_root / "runs_training")
+        for result_root in configured_result_roots()
     )
     if not in_configs and not in_runs:
         raise ValueError("Config path must be inside configs/ or configured results/runs/.")
@@ -552,7 +553,7 @@ def find_run_record(run_path):
     run_dir = str(run_path.resolve())
     candidates = []
     for result_root in configured_result_roots():
-        candidates.extend([result_root / "training_runs.csv", result_root / "runs.csv"])
+        candidates.extend([result_root / "training_runs.csv", result_root / "runs_inference.csv"])
     for path in candidates:
         for row in _read_csv_rows(path):
             row_run_dir = row.get("run_dir") or row.get("path") or ""

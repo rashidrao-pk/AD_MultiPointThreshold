@@ -28,7 +28,7 @@ def _resolve_project_path(path):
 
 
 def _read_runs_csv(path):
-    """Read experiment registry rows from a runs.csv file."""
+    """Read experiment registry rows from a runs_inference.csv file."""
     if not path.exists():
         return []
 
@@ -37,7 +37,7 @@ def _read_runs_csv(path):
 
 
 def _row_matches_config(row, config, suffix=""):
-    """Return whether a runs.csv row matches the selected experiment config."""
+    """Return whether a runs_inference.csv row matches the selected experiment config."""
     if row.get("hash") == experiment_hash(config, suffix):
         return True
 

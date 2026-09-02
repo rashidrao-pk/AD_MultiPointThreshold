@@ -79,25 +79,26 @@ Override config values from CLI without editing YAML:
 
 ```bash
 # Friendly shortcut for MVTec object/category
-python -m modules.training.train --config configs/mvtec_xn2.yaml --model vaegan \
-  --category zipper \
-  --force \
-  --plot_curves \
-  --plot_score_distribution \
-  --plot_quality \
-  --plot_latent_space \
-  --latent_space_classes both \
+python -m modules.training.train --config configs/mvtec_xn2.yaml --model vaegan `
+  --category zipper `
+  --force `
+  --plot_curves `
+  --plot_score_distribution `
+  --plot_quality `
+  --plot_latent_space `
+  --latent_space_classes both `
   --latent_projection pca
 
 # Generic dotted-key overrides; can be repeated
-python -m modules.training.train --config configs/mvtec_xn2.yaml --model vaegan \
-  --force \
-  --set data.category=hazelnut \
-  --set training.epochs=200 \
-  --set training.beta_center=0.0001 \
+python -m modules.training.train --config configs/mvtec_xn2.yaml --model vaegan `
+  --force `
+  --set data.category=hazelnut `
+  --set training.epochs=200 `
+  --set training.beta_center=0.0001 `
   --set threshold.percentile=99
 ```
 
+## MVTec on XN2
 Train every known object/area for a dataset:
 
 ```bash
@@ -107,26 +108,32 @@ python -m modules.training.train --config configs/mvtec_xn2.yaml --dataset MVTec
 # Train one object while also overriding the dataset name
 python -m modules.training.train --config configs/mvtec_xn2.yaml --dataset MVTec --category zipper --model vaegan --force
 
-# Train all Cobots safety areas
-python -m modules.training.train --config configs/cobots_xn2.yaml --dataset Cobots_Synthetic --model vaegan --force
-
 # Train all MVTec objects for every registered trainable model
 python -m modules.training.train --config configs/mvtec_xn2.yaml --dataset MVTec --model all --force
 ```
 
+## Cobots_Synthetic on XN2
+
+```bash
+# Train all Cobots safety areas
+python -m modules.training.train --config configs/cobots_xn2.yaml --dataset Cobots_Synthetic --model vaegan --force
+```
+
+## ADVIS VAE-GAN
 For all registered trainable models: ADVIS VAE-GAN, vanilla VAE, and basic AE.
 
 ```bash
 python -m modules.training.train --config configs/mvtec_mac.yaml --model all --plot_all --latent_space_classes both
 ```
 
-Train only the vanilla VAE baseline:
+### Train only the vanilla VAE baseline:
 
 ```bash
 python -m modules.training.train --config configs/mvtec_mac.yaml --model vanilla_vae --force --plot_all --latent_space_classes both
 ```
 
-Train only the basic autoencoder baseline:
+### Train only the basic AE-autoencoder baseline:
+  - --model basic_ae
 
 ```bash
 python -m modules.training.train --config configs/mvtec_mac.yaml --model basic_ae --force --plot_all --latent_space_classes both

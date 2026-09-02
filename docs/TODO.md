@@ -1,9 +1,10 @@
 # TODO LIST
 
 1. [x] ADD different models in it
-   - [x] AE
+   - [x] AE - [RM_TRAINING/AE](/docs/RM_TRAINING.md#added-ae)
    - [x] VAE
    - [x] VAE-GAN
+   -[x] ADVIS-VAE-GAN — [RM_TRAINING/ADVIS-VAE-GAN](/docs/RM_TRAINING.md#run-for-advis-vae-gan)
    - [ ] GAN
    - [ ] VitVAEGAN
 

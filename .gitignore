@@ -8,8 +8,8 @@ models/vaegan/AD_Cobots_Synthetic/*
 models/vaegan/AD_Robotics_Hazards/*
 configs/local.yaml
 
-results/experiments/
-results/runs/
+results/experiments_inference/
+results/runs_training/
 results/
 
 

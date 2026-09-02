@@ -44,7 +44,8 @@ dependencies = [
   "scikit-image",
   "PyYAML",
   "Pillow",
-  "numpy"
+  "numpy",
+  "pre-commit"
 ]
 
 [project.optional-dependencies]
