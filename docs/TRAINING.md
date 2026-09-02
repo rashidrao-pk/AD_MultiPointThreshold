@@ -103,13 +103,13 @@ Train every known object/area for a dataset:
 
 ```bash
 # Train all MVTec objects using one config template
-python -m modules.training.train --config configs/mvtec_xn2.yaml --dataset MVTec --model vaegan --force
+python -m modules.training.train --config configs/mvtec_xn2.yaml --dataset MVTec --model vaegan --force --plot_all --latent_space_classes both
 
 # Train one object while also overriding the dataset name
-python -m modules.training.train --config configs/mvtec_xn2.yaml --dataset MVTec --category zipper --model vaegan --force
+python -m modules.training.train --config configs/mvtec_xn2.yaml --dataset MVTec --category zipper --model vaegan --force --plot_all --latent_space_classes both
 
 # Train all MVTec objects for every registered trainable model
-python -m modules.training.train --config configs/mvtec_xn2.yaml --dataset MVTec --model all --force
+python -m modules.training.train --config configs/mvtec_xn2.yaml --dataset MVTec --model all --force --plot_all --latent_space_classes both
 ```
 
 ## Cobots_Synthetic on XN2

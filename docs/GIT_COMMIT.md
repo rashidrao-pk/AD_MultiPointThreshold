@@ -56,3 +56,11 @@ example, `Add SSIM anomaly scoring`, `Fix CUDA memory usage during inference`, o
 
 If a check fails, fix the reported issue and commit again. Avoid bypassing the
 hooks unless there is a documented and reviewed reason to do so.
+
+
+```bash
+git add .
+pre-commit run --all-files
+git add .
+git commit -m "Improve threshold calibration pipeline"
+```

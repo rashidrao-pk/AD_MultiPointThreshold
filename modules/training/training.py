@@ -493,6 +493,8 @@ def _run_training_for_model(args, project_root, config_path, base_config, model_
     print(f"[device] {device}")
     print(f"[data] {config.data.name}/{getattr(config.data, 'category', 'all')}")
     print(f"[model] {config.model.name}")
+    print(f"[batch_size] {config.data.batch_size}")
+
     print(f"[checkpoint] {checkpoint_path}")
     if args.force:
         print(f"[new_checkpoint] {publish_checkpoint_path}")
