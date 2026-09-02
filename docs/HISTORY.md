@@ -16,3 +16,8 @@
    -  `python app.py` and then visit [http://127.0.0.1:8000/training](http://127.0.0.1:8000/training)
 5. [x] Override `config parameters` with `CLI` args
    -
+
+## 02 Sep 2026:
+
+1. [x] `Cleaned DOcumentation` (effected files): (Rashid)
+   - [docs/*.md](/docs/*)

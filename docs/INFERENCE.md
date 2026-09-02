@@ -6,6 +6,8 @@
 
 ```
 
+## Verified Inference Part for Dell G5
+
 ```bash
 python -m experiments.run_vaegan --config configs\mvtec_xn2.yaml --force
 python -m experiments.run_vaegan --config configs\cobots_xn2.yaml --force
@@ -18,11 +20,15 @@ python -m experiments.run_vaegan --config configs/cobots_mac.yaml --force
 python -m experiments.run_vaegan --config configs/hazards_mac.yaml --force
 ```
 
+## TESTED INFERENCE ON DELL G5
 ```bash
-
 python -m experiments.run_vaegan --config configs/mvtec_g5.yaml --force
 python -m experiments.run_vaegan --config configs/cobots_g5.yaml --force
 python -m experiments.run_vaegan --config configs/hazards_g5.yaml --force
+
+python -m modules.plotting.plot_experiment_results --run_dir results/experiments_inference/E00006
+python -m modules.plotting.plot_experiment_results --run_dir results/experiments_inference/E00007
+python -m modules.plotting.plot_experiment_results --run_dir results/experiments_inference/E00003
 ```
 
 Override config values from CLI without editing YAML:
@@ -60,7 +66,7 @@ python -m experiments.run_vaegan --config configs/hazards_mac.yaml --force
 ## PLOT Results:
 
 ```bash
-python -m modules.plotting.plot_experiment_results --run_dir results/experiments/E00008
+python -m modules.plotting.plot_experiment_results --run_dir results/experiments_inference/E00001
 ```
 
 Or find the latest completed experiment from the config file's `output.dir` and matching model/data/scoring/threshold settings:

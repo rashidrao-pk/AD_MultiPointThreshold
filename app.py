@@ -223,7 +223,7 @@ def list_experiments():
     """Return known inference experiment folders."""
     experiments = []
     for result_root in configured_result_roots():
-        experiments_root = result_root / "experiments"
+        experiments_root = result_root / "experiments_inference"
         if experiments_root.exists():
             experiments.extend(path for path in experiments_root.iterdir() if path.is_dir())
     return [
