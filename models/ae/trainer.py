@@ -6,7 +6,7 @@ import torch.nn as nn
 from torch import optim
 from tqdm import tqdm
 
-from models.vaegan.checkpoint import build_dataset_summary, save_checkpoint
+from models.vaegan.checkpoint import build_dataset_summary, load_checkpoint, save_checkpoint
 
 from .model import Decoder, Encoder
 
@@ -81,6 +81,7 @@ def train_model(
     run_dir,
     device,
     training_plotter=None,
+    resume_checkpoint=None,
 ):
     """Train a basic convolutional autoencoder and save compatible checkpoints."""
     training_cfg = _cfg_get(config, "training", None)
@@ -111,8 +112,30 @@ def train_model(
     )
     loss_history = []
     best_val_loss = float("inf")
+    start_epoch = 0
 
-    for epoch in tqdm(range(1, epochs + 1), desc="epochs"):
+    if resume_checkpoint is not None:
+        checkpoint = load_checkpoint(
+            resume_checkpoint,
+            encoder=encoder,
+            decoder=decoder,
+            optimizer_enc_dec=optimizer,
+            device=device,
+        )
+        start_epoch = int(checkpoint.get("epoch") or checkpoint.get("epochs_trained") or 0)
+        loss_history = list(checkpoint.get("loss_history") or [])
+        validation_losses = [
+            row["val_recon_loss"] for row in loss_history if row.get("val_recon_loss") is not None
+        ]
+        best_val_loss = min(validation_losses, default=float("inf"))
+        print(f"[resume] continuing at epoch {start_epoch + 1} of {epochs}")
+
+    for epoch in tqdm(
+        range(start_epoch + 1, epochs + 1),
+        desc="epochs",
+        initial=min(start_epoch, epochs),
+        total=epochs,
+    ):
         train_metrics = train_one_epoch(
             encoder,
             decoder,
@@ -126,19 +149,6 @@ def train_model(
         loss_history.append(epoch_metrics)
 
         pd.DataFrame(loss_history).to_csv(run_dir / "loss_history.csv", index=False)
-        if training_plotter is not None:
-            training_plotter.on_epoch_end(
-                epoch=epoch,
-                total_epochs=epochs,
-                loss_history=loss_history,
-                encoder=encoder,
-                decoder=decoder,
-                discriminator=None,
-                train_loader=train_loader,
-                val_loader=val_loader,
-                device=device,
-            )
-
         if epoch % save_every == 0 or epoch == epochs:
             save_checkpoint(
                 run_dir / "model_last.pt",
@@ -170,6 +180,19 @@ def train_model(
                 metrics=epoch_metrics,
                 model_name=model_name,
                 notes="Best basic autoencoder checkpoint by validation reconstruction loss.",
+            )
+
+        if training_plotter is not None:
+            training_plotter.on_epoch_end(
+                epoch=epoch,
+                total_epochs=epochs,
+                loss_history=loss_history,
+                encoder=encoder,
+                decoder=decoder,
+                discriminator=None,
+                train_loader=train_loader,
+                val_loader=val_loader,
+                device=device,
             )
 
         print(

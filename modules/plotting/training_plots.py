@@ -1,7 +1,9 @@
 """Plotting helpers for model training runs."""
 
-from pathlib import Path
+import gc
 import json
+import warnings
+from pathlib import Path
 
 import matplotlib
 
@@ -865,7 +867,7 @@ class TrainingPlotter:
 
         return examples
 
-    def on_epoch_end(
+    def _save_epoch_plots(
         self,
         epoch,
         total_epochs,
@@ -961,3 +963,41 @@ class TrainingPlotter:
                 self.run_dir,
                 max_batches=self.max_score_batches,
             )
+
+    def on_epoch_end(
+        self,
+        epoch,
+        total_epochs,
+        loss_history,
+        encoder,
+        decoder,
+        discriminator,
+        train_loader,
+        val_loader,
+        device,
+    ):
+        """Save diagnostics without allowing an optional plot to stop training."""
+        try:
+            self._save_epoch_plots(
+                epoch=epoch,
+                total_epochs=total_epochs,
+                loss_history=loss_history,
+                encoder=encoder,
+                decoder=decoder,
+                discriminator=discriminator,
+                train_loader=train_loader,
+                val_loader=val_loader,
+                device=device,
+            )
+        except (MemoryError, OSError) as exc:
+            warnings.warn(
+                f"Skipping training plots for epoch {epoch}: {type(exc).__name__}: {exc}",
+                RuntimeWarning,
+                stacklevel=2,
+            )
+        finally:
+            # A failed savefig can bypass the close call in an individual plot helper.
+            plt.close("all")
+            gc.collect()
+            if torch.cuda.is_available():
+                torch.cuda.empty_cache()

@@ -344,6 +344,16 @@ def parse_args():
         help="Train again even if the same config/model/data run already completed.",
     )
     parser.add_argument(
+        "--resume",
+        type=Path,
+        default=None,
+        metavar="CHECKPOINT",
+        help=(
+            "Resume an interrupted run from a model_last.pt checkpoint. The total "
+            "epoch target still comes from the config or --epochs."
+        ),
+    )
+    parser.add_argument(
         "--plot_curves",
         action="store_true",
         help="Save training-curve plots during training.",
@@ -482,7 +492,7 @@ def _run_training_for_model(args, project_root, config_path, base_config, model_
         _forced_checkpoint_path(config, checkpoint_path) if args.force else checkpoint_path
     )
     checkpoint_info = _read_checkpoint_info(checkpoint_path)
-    if checkpoint_info is not None and not args.force:
+    if checkpoint_info is not None and not args.force and args.resume is None:
         _print_existing_checkpoint(config, checkpoint_info)
         return None
 
@@ -503,7 +513,15 @@ def _run_training_for_model(args, project_root, config_path, base_config, model_
     train_loader, val_loader, train_dataset, val_dataset = load_data(config)
     print(f"[data] train={len(train_dataset)} val={len(val_dataset)}")
 
-    run_dir = _make_run_dir(config, args.suffix)
+    resume_checkpoint = None
+    if args.resume is not None:
+        resume_checkpoint = args.resume.expanduser().resolve()
+        if not resume_checkpoint.is_file():
+            raise FileNotFoundError(f"Resume checkpoint not found: {resume_checkpoint}")
+        run_dir = resume_checkpoint.parent
+        print(f"[resume] {resume_checkpoint}")
+    else:
+        run_dir = _make_run_dir(config, args.suffix)
     save_config_yaml(config, run_dir / "config.yaml")
     print(f"[run] {run_dir}")
     print(f"[hash] {run_hash}")
@@ -552,6 +570,7 @@ def _run_training_for_model(args, project_root, config_path, base_config, model_
         run_dir=run_dir,
         device=device,
         training_plotter=training_plotter,
+        resume_checkpoint=resume_checkpoint,
     )
 
     published_checkpoint = _publish_best_checkpoint(result["run_dir"], publish_checkpoint_path)
