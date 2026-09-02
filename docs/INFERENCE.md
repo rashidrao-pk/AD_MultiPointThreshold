@@ -28,7 +28,7 @@ python -m experiments.run_vaegan --config configs/hazards_g5.yaml --force
 
 python -m modules.plotting.plot_experiment_results --run_dir results/experiments_inference/E00006
 python -m modules.plotting.plot_experiment_results --run_dir results/experiments_inference/E00007
-python -m modules.plotting.plot_experiment_results --run_dir results/experiments_inference/E00003
+python -m modules.plotting.plot_experiment_results --run_dir results/experiments_inference/E00008
 ```
 
 Override config values from CLI without editing YAML:

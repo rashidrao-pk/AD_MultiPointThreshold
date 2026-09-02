@@ -119,6 +119,20 @@ python -m modules.training.train --config configs/mvtec_xn2.yaml --dataset MVTec
 python -m modules.training.train --config configs/cobots_xn2.yaml --dataset Cobots_Synthetic --model vaegan --force
 ```
 
+## MVTec on Dell/G5
+Train every known object/area for a dataset:
+
+```bash
+# Train all MVTec objects using one config template
+python -m modules.training.train --config configs/mvtec_g5.yaml --dataset MVTec --model vaegan --force --plot_all --latent_space_classes both
+
+# Train one object while also overriding the dataset name
+python -m modules.training.train --config configs/mvtec_g5.yaml --dataset MVTec --category hazelnut --model vaegan --force --plot_all --latent_space_classes both
+
+# Train all MVTec objects for every registered trainable model
+python -m modules.training.train --config configs/mvtec_g5.yaml --dataset MVTec --model all --force --plot_all --latent_space_classes both
+```
+
 ## ADVIS VAE-GAN
 For all registered trainable models: ADVIS VAE-GAN, vanilla VAE, and basic AE.
 
