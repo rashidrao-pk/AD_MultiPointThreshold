@@ -7,6 +7,8 @@ This file provides a compact reference for downloading datasets and pretrained c
 
 ```bash
 pip install -U kaggle huggingface_hub
+python -m pip install -U kaggle
+
 ```
 
 Configure Kaggle API credentials:
@@ -49,13 +51,13 @@ Sources:
 ```bash
 mkdir -p checkpoints
 
-huggingface-cli download rashidrao/AD_Cobots_Synthetic \
+hf download rashidrao/AD_Cobots_Synthetic \
   --local-dir checkpoints/AD_Cobots_Synthetic
 
-huggingface-cli download rashidrao/AD_Robotics_Hazards \
+hf download rashidrao/AD_Robotics_Hazards \
   --local-dir checkpoints/AD_Robotics_Hazards
 
-huggingface-cli download rashidrao/AD_MVTec \
+hf download rashidrao/AD_MVTec \
   --local-dir checkpoints/AD_MVTec
 ```
 

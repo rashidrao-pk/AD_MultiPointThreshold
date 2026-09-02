@@ -1,7 +1,9 @@
 ## RUN TEST
 
 ```bash
-python -m experiments.run_experiment --config .\configs\local.example.yaml
+
+# python -m experiments.run_experiment --config .\configs\local.example.yaml
+
 ```
 
 ```bash
@@ -17,6 +19,7 @@ python -m experiments.run_vaegan --config configs/hazards_mac.yaml --force
 ```
 
 ```bash
+
 python -m experiments.run_vaegan --config configs\mvtec_g5.yaml --force
 python -m experiments.run_vaegan --config configs\cobots_g5.yaml --force
 python -m experiments.run_vaegan --config configs\hazards_g5.yaml --force
