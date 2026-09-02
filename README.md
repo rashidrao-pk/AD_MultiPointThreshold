@@ -50,6 +50,7 @@ Install the Kaggle and Hugging Face CLIs:
 
 ```bash
 pip install -U kaggle huggingface_hub
+
 # or using conda
 # conda install -c conda-forge huggingface_hub
 ```
@@ -126,13 +127,13 @@ Download all checkpoint repositories:
 ```bash
 mkdir -p checkpoints
 
-huggingface-cli download rashidrao/AD_Cobots_Synthetic \
+hf download rashidrao/AD_Cobots_Synthetic \
   --local-dir checkpoints/AD_Cobots_Synthetic
 
-huggingface-cli download rashidrao/AD_Robotics_Hazards \
+hf download rashidrao/AD_Robotics_Hazards \
   --local-dir checkpoints/AD_Robotics_Hazards
 
-huggingface-cli download rashidrao/AD_MVTec \
+hf download rashidrao/AD_MVTec \
   --local-dir checkpoints/AD_MVTec
 ```
 
