@@ -69,8 +69,8 @@ def reconstruction_quantile_score(loader, enc, dec, device, quantiles):
 
             anomaly_map = (
                 data - recon
-            ).abs()  ## TODO: we can also try squared error here, but for now we stick to absolute error as it is more interpretable and less sensitive to outliers.
-            flat_map = anomaly_map.view(anomaly_map.size(0), -1)
+            ).abs().mean(dim=1)  ## TODO: we can also try squared error here, but for now we stick to absolute error as it is more interpretable and less sensitive to outliers.
+            flat_map = anomaly_map.flatten(start_dim=1)
 
             batch_scores = torch.quantile(
                 flat_map,

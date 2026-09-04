@@ -141,8 +141,16 @@ def run_single_experiment(config_path, suffix, force, overrides=None):
 
     results = {}
 
+    ## importrant point here 
+    # if multipoint, sahpe is not anymore (N,) but is (N, n_quantiles) so we need aggregation method to get scores
+    # using mean for now, but need to find better method 
+    ranking_scores = test_scores
+
+    if test_scores.ndim == 2:
+        ranking_scores = test_scores.mean(dim=1)
+
     ranking_result = ranking_metrics(
-        test_scores.detach().cpu(),
+        ranking_scores.detach().cpu(),
         binary_test_labels,
     )
     if len(np.unique(np.asarray(binary_test_labels).astype(int))) < 2:
